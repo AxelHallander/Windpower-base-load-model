@@ -20,9 +20,8 @@ for w =wind_data
     elseif w < wind_rated % if wind is smaller than rated, then cubic approximation
         power_vec(i) = power_rated*(w/wind_rated)^3;
     elseif w >= wind_rated
-        
-        
-
+        power_vec(i) = power_rated; %if wind is equal or greater than rated power, power is rated
     end
-
 end
+
+
