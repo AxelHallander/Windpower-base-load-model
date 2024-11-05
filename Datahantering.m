@@ -1,5 +1,6 @@
-function [A,R] = ReadWindData(DataFile)
-[A,R] = readgeoraster("C:\Users\vilgo\OneDrive\Desktop\Projekt WindBaseload\Windpower-base-load-model\c76a760b03314b5fce3c90e342a95e93.grib");
+function [A,R] = ReadWindData(DataFile,path)
+
+[A,R] = readgeoraster(path);
 
 wind_speed = zeros(size(A));
 
@@ -10,3 +11,4 @@ for i = 1:length(A)/2
     Wind_speed_momentarily = real(sqrt(east_comp.^2 + north_comp^2));
     wind_speed(:,:,i) = Wind_speed_momentarily;
 end
+

@@ -10,11 +10,11 @@ wind_cut_out = 25; %m/s
 power_rated = 2*10^9; %GW
 
 
-
 power_vec = zeros(size(wind_data));
 
 i = 1;
 for w =wind_data
+    
     if w < wind_cut_in  % if wind is smaller than cut in, power is 0
         power_vec(i) = 0;
     elseif w < wind_rated % if wind is smaller than rated, then cubic approximation
