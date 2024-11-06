@@ -10,7 +10,7 @@ Cut_Out = 25;
 
 
 %Read data and windspeeds
-Wind_Speed = ReadWindData(path_axel);
+Wind_Speed = ReadWindData(path_vilgot);
 
 %Calculate power
 Power_Values = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,Wind_Speed);
@@ -67,6 +67,9 @@ for p = power_vec
         if loc_storage_vec(i-1) > power_diff
            loc_storage_vec(i) = loc_storage_vec(i-1) - power_diff;
            power_out(i) = min_power_out; %p + power_diff; %or just = min_power_out
+        elseif loc_storage_vec(i-1) < power_diff % if not enough power stored to reach min, empty the storage
+            loc_storage_vec(i) = 0;
+            power_out(i) = loc_storage_vec(i);
         end
     else
         loc_storage_vec(i) = loc_storage_vec(i-1);      %otherwise, storage reamains the same
