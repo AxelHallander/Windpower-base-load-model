@@ -25,11 +25,11 @@ power_matrix = [power_vec; power_vec2];
 X = 1:length(power_vec);
 
 %pre-allocate arrays
-n_parks = 2; %number of parks
-loc_storage_matrix = zeros(n_parks,length(X));
-power_out_matrix = zeros(n_parks,length(X));
+n = 2; %number of parks
+loc_storage_matrix = zeros(n,length(X));
+power_out_matrix = zeros(n,length(X));
 big_storage_vec = zeros(1,length(X));
-power_diff_vec = zeros(1,n_parks);
+power_diff_vec = zeros(1,n);
 
 %load max and min
 cable_power_cap = 4*10^9;
@@ -38,13 +38,13 @@ loc_storage_cap = 10*10^9; %? It will decrease when adding more parks
 
 %index start 2 to initiate as loop is dependent on i-1
 
-%% Inte klart...
+%% Inte klart... OCH DÅLIGT; SE NEDAN
 
 % i - iterate over time series
 % j - iterate over number of parks
 for i = 2:length(power_vec)
     %iterates over one time index for all parks
-    for j = 1:n_parks
+    for j = 1:n
         p = power_matrix(j,i);
         if p >= cable_power_cap                      %if power is bigger than the cable's, store the remainder in storage
             loc_storage_matrix(j,i) = loc_storage_matrix(j,i-1) + p - cable_power_cap;
@@ -107,10 +107,56 @@ end
 % power_out_matrix(1) = [];
 
 
-figure(3)
-plot(X,loc_storage_matrix)
 
-figure(4)
-plot(X,power_out_matrix)
+%% %Detta är en bättre approach!! Skippar en for loop, toppen!
+
+% Initialize power and storage matrices (T x N)
+
+%X-vector
+X = 1:length(power_vec);
+
+%pre-allocate arrays
+n = 2; %number of parks
+T = length(X); % number of timesteps
+
+power_matrix = [power_vec; power_vec2];    % Power output data for each park over time
+loc_storage_matrix = zeros(n,T);
+power_out_matrix = zeros(n,T);
+big_storage_vec = zeros(1,T);
+
+%load max and min
+cable_power_cap = 4*10^9;
+min_power_out = 3*10^9;
+loc_storage_cap = 10*10^9; %? It will decrease when adding more parks
+
+
+
+% Trading logic at each time step
+for t = 1:T
+    % Calculate current power balance (vectorized for all parks)
+    power_diff_vec = power_matrix(:, t) - min_power_out;  % Vector of power differences
+    
+    % Identify surplus and deficit parks // this doesnt say which parks...
+    surplusParks = power_diff_vec > 0;
+    deficitParks = power_diff_vec < 0;
+    
+    % Redistribute power (example sketch logic)
+    % Find total excess and total deficit
+    totalSurplus = sum(power_diff_vec(surplusParks));
+    totalDeficit = -sum(power_diff_vec(deficitParks));  % Absolute value
+
+    % Redistribute based on ratio of surplus to deficit
+    if totalSurplus >= totalDeficit
+        % Sufficient surplus to cover deficits
+        loc_storage_matrix(deficitParks, t+1) = loc_storage_matrix(deficitParks, t+1) + ...
+                                           power_diff_vec(deficitParks);  % Cover deficits
+        loc_storage_matrix(deficitParks, t+1) = loc_storage_matrix(deficitParks, t+1) - ...
+                                           (totalDeficit / sum(surplusParks)); % Distribute equally
+    else
+        % Insufficient surplus, distribute proportionally
+        % Additional code to proportionally distribute would go here
+    end
+end
+
 
 
