@@ -136,9 +136,9 @@ for t = 1:T
     % Calculate current power balance (vectorized for all parks)
     power_diff_vec = power_matrix(:, t) - min_power_out;  % Vector of power differences
     
-    % Identify surplus and deficit parks // this doesnt say which parks...
-    surplusParks = power_diff_vec > 0;
-    deficitParks = power_diff_vec < 0;
+    % Identify surplus and deficit parks
+    surplusParks = max(powerBalance, 0);  % Positive values (surplus), zero otherwise
+    deficitParks = -min(powerBalance, 0); % Positive values (deficit), zero otherwise
     
     % Redistribute power (example sketch logic)
     % Find total excess and total deficit
