@@ -25,9 +25,11 @@ power_matrix = [power_vec; power_vec2];
 X = 1:length(power_vec);
 
 %pre-allocate arrays
-loc_storage_matrix = zeros(2,length(X));
+n_parks = 2; %number of parks
+loc_storage_matrix = zeros(n_parks,length(X));
+power_out_matrix = zeros(n_parks,length(X));
 big_storage_vec = zeros(1,length(X));
-power_out_matrix = zeros(2,length(X));
+power_diff_vec = zeros(1,n_parks);
 
 %load max and min
 cable_power_cap = 4*10^9;
@@ -36,32 +38,73 @@ loc_storage_cap = 10*10^9; %? It will decrease when adding more parks
 
 %index start 2 to initiate as loop is dependent on i-1
 
-%% inte börjat här...
-i = 2;
-for p = power_vec
-    if p >= cable_power_cap                      %if power is bigger than the cable's, store the remainder in storage
-        power_diff = p - cable_power_cap;
-        loc_storage_matrix(i) = loc_storage_matrix(i-1) + power_diff;
-        power_out_matrix(i) = cable_power_cap;
-    elseif p < min_power_out                    %if power is lower than min, use storage
-        power_diff = min_power_out - p;
-        if loc_storage_matrix(i-1) > power_diff
-           loc_storage_matrix(i) = loc_storage_matrix(i-1) - power_diff;
-           power_out_matrix(i) = min_power_out; 
-        elseif loc_storage_matrix(i-1) < power_diff % if not enough power stored to reach min, empty the storage
+%% Inte klart...
+
+% i - iterate over time series
+% j - iterate over number of parks
+for i = 2:length(power_vec)
+    %iterates over one time index for all parks
+    for j = 1:n_parks
+        p = power_matrix(j,i);
+        if p >= cable_power_cap                      %if power is bigger than the cable's, store the remainder in storage
+            loc_storage_matrix(j,i) = loc_storage_matrix(j,i-1) + p - cable_power_cap;
+            power_out_matrix(j,i) = cable_power_cap;
+            power_diff_vec(j) = 0;                  %store 0 in temp vector
+        elseif p < min_power_out                    %if power is lower than min, use storage
+            power_diff_vec(j) = min_power_out - p;  %store -diff in temp vector
+        else
+            power_diff_vec(j) = p - min_power_out; %store +diff in temp vector 
+        end
+    end
+
+    %här här man gått igenom ett tidssteg för alla parker... skicka
+    %överskotts energi till parker, om inte finns någon som vill ha till
+    %storage
+
+    balance = sum(power_diff_vec);
+    if balance == 0
+        %nothing happens as power_out_matrix is already calculated 
+    elseif balance > 0  %if there is a surplus in total;
+        %three alternatives 
+        %1 - set all power_out to min min_power_out and store the rest
+        %regionally -  (easy and keeps a steady load but introduces losses
+        %and bigger storage)
+        power_out_matrix(:,i) = min_power_out;
+        big_storage_vec(i) = big_storage_vec(i-1) + balance;
+
+        %2 - set the parks with negative power_diff to min_power_out and
+        % calculate the difference between one + and one - til all are
+        % good... save the rest in local or regional
+
+        %3 - set the parks with negative power_diff to min_power_out and
+        % fil the biggest +power_diff from before with the remainder(but not bigger than originally), then the second biggest... 
+
+        %4 - introduce a distance/efficency matrix, sends to the ones that
+        %have shortest distance/best efficency
+    else
+        %if there are +power_diffs send them to closest parks that are -.
+        %When there are no +power_diffs, take from local storage,
+        %if local storage empty, take from regional.
+
+    end
+
+
+    %någon if sats
+        %take from local storage
+        if loc_storage_matrix(j,i-1) > power_diff_vec(j)
+           loc_storage_matrix(j,i) = loc_storage_matrix(j,i-1) - power_diff_vec(j);
+           power_out_matrix(j,i) = min_power_out; 
+        elseif loc_storage_matrix(j,i-1) < power_diff_vec(j) % if not enough power stored to reach min, empty the storage
             loc_storage_matrix(i) = 0;
             power_out_matrix(i) = loc_storage_matrix(i);
         end
-    else
-        loc_storage_matrix(i) = loc_storage_matrix(i-1);      %otherwise, storage reamains the same
-        power_out_matrix(i) = p;
-    end
-i = i + 1;
+    %här ska all
 end
 
-%remove first zero-value index.
-loc_storage_matrix(1) = [];
-power_out_matrix(1) = [];
+
+% %remove first zero-value index.
+% loc_storage_matrix(1) = [];
+% power_out_matrix(1) = [];
 
 
 figure(3)
