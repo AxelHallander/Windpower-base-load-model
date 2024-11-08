@@ -131,35 +131,47 @@ loc_storage_cap = 10*10^9; %? It will decrease when adding more parks
 
 
 
-
-surplusParksIdx = cell(1,T);
-deficitParksIdx = cell(1,T);
-
-% Trading logic at each time step
 for t = 1:T
-    % Calculate current power balance (vectorized for all parks)
+    % Calculate current power balance for each park
     power_diff_vec = power_matrix(:, t) - min_power_out;  % Vector of power differences
     
-    % Identify parks with surplus and deficit
-    surplusParksIdx{t} = find(powerBalance > 0);  % Indices of parks with surplus power
-    deficitParksIdx{t} = find(powerBalance < 0);  % Indices of parks with deficit power
+    % Calculate surplus and deficit values for each park
+    surplusValues = max(power_diff_vec, 0);  % Surplus values (positive or zero)
+    deficitValues = -min(power_diff_vec, 0); % Deficit values (positive or zero)
     
-    % Calculate total surplus and total deficit
-    totalSurplus = sum(powerBalance(surplusParksIdx{t}));
-    totalDeficit = -sum(powerBalance(deficitParksIdx{t}));  % Absolute value
-
-    % Redistribute based on ratio of surplus to deficit
+    % Total surplus and total deficit
+    totalSurplus = sum(surplusValues);
+    totalDeficit = sum(deficitValues);
+    
+    % Redistribute power based on the calculated surplus and deficit
     if totalSurplus >= totalDeficit
         % Sufficient surplus to cover deficits
-        loc_storage_matrix(deficitParks, t+1) = loc_storage_matrix(deficitParks, t+1) + ...
-                                           power_diff_vec(deficitParks);  % Cover deficits
-        loc_storage_matrix(deficitParks, t+1) = loc_storage_matrix(deficitParks, t+1) - ...
-                                           (totalDeficit / sum(surplusParks)); % Distribute equally
+        
+        % Update storage for deficit parks (adding the deficit values)
+        loc_storage_matrix(:, t+1) = loc_storage_matrix(:, t);
+        loc_storage_matrix(:, t+1) = loc_storage_matrix(:, t+1) + deficitValues;
+        
+        % Reduce storage for surplus parks (distribute equally among surplus parks)
+        numSurplusParks = sum(surplusValues > 0);
+        loc_storage_matrix(surplusValues > 0, t+1) = loc_storage_matrix(surplusValues > 0, t) - ...
+                                                     (totalDeficit / numSurplusParks);
     else
         % Insufficient surplus, distribute proportionally
-        % Additional code to proportionally distribute would go here
+        
+        % Calculate the proportion of each park's deficit that can be covered
+        deficitShare = (surplusValues / totalSurplus) .* totalDeficit;
+        
+        % Update storage for deficit parks proportionally
+        loc_storage_matrix(:, t+1) = loc_storage_matrix(:, t);
+        loc_storage_matrix(deficitValues > 0, t+1) = loc_storage_matrix(deficitValues > 0, t+1) + deficitShare;
+        
+        % Surplus parks contribute all their available surplus
+        loc_storage_matrix(surplusValues > 0, t+1) = loc_storage_matrix(surplusValues > 0, t) - surplusValues(surplusValues > 0);
     end
+
 end
 
-
-
+% Display sample results for a given time step
+sampleTimeStep = 10;
+disp(['Surplus values at time step ', num2str(sampleTimeStep), ': ', num2str(surplusValues')]);
+disp(['Deficit values at time step ', num2str(sampleTimeStep), ': ', num2str(deficitValues')]);

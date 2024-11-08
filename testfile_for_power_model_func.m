@@ -131,31 +131,24 @@ loc_storage_cap = 10*10^9; %? It will decrease when adding more parks
 
 
 
-% Trading logic at each time step
 for t = 1:T
-    % Calculate current power balance (vectorized for all parks)
+    % Calculate current power balance for each park
     power_diff_vec = power_matrix(:, t) - min_power_out;  % Vector of power differences
     
-    % Identify surplus and deficit parks
-    surplusParks = max(powerBalance, 0);  % Positive values (surplus), zero otherwise
-    deficitParks = -min(powerBalance, 0); % Positive values (deficit), zero otherwise
+    % Calculate surplus and deficit values for each park
+    surplusValues = max(power_diff_vec, 0);  % Surplus values (positive or zero)
+    deficitValues = -min(power_diff_vec, 0); % Deficit values (positive or zero)
     
-    % Redistribute power (example sketch logic)
-    % Find total excess and total deficit
-    totalSurplus = sum(power_diff_vec(surplusParks));
-    totalDeficit = -sum(power_diff_vec(deficitParks));  % Absolute value
-
-    % Redistribute based on ratio of surplus to deficit
+    % Total surplus and total deficit
+    totalSurplus = sum(surplusValues);
+    totalDeficit = sum(deficitValues);
+    
+    % Redistribute power based on the calculated surplus and deficit
     if totalSurplus >= totalDeficit
-        % Sufficient surplus to cover deficits
-        loc_storage_matrix(deficitParks, t+1) = loc_storage_matrix(deficitParks, t+1) + ...
-                                           power_diff_vec(deficitParks);  % Cover deficits
-        loc_storage_matrix(deficitParks, t+1) = loc_storage_matrix(deficitParks, t+1) - ...
-                                           (totalDeficit / sum(surplusParks)); % Distribute equally
-    else
-        % Insufficient surplus, distribute proportionally
-        % Additional code to proportionally distribute would go here
+
+
     end
+
 end
 
 
