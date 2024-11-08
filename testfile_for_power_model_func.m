@@ -132,24 +132,46 @@ loc_storage_cap = 10*10^9; %? It will decrease when adding more parks
 
 
 for t = 1:T
-    % Calculate current power balance for each park
-    power_diff_vec = power_matrix(:, t) - min_power_out;  % Vector of power differences
+    % Calculate power balance for each park
+    power_diff_vec = power_matrix(:, t) - min_power_out; 
     
     % Calculate surplus and deficit values for each park
-    surplusValues = max(power_diff_vec, 0);  % Surplus values (positive or zero)
-    deficitValues = -min(power_diff_vec, 0); % Deficit values (positive or zero)
-    
-    % Total surplus and total deficit
-    totalSurplus = sum(surplusValues);
-    totalDeficit = sum(deficitValues);
-    
-    % Redistribute power based on the calculated surplus and deficit
-    if totalSurplus >= totalDeficit
+    surplus_parks = max(power_diff_vec, 0);     %if value>0 it gets stored, otherwise it is zero for that index
+    deficit_parks = -min(power_diff_vec, 0);    % If vulue<0 it gets stored, otherwise it is zero for that index
 
+    %First case: handel power beyond caple_power_cap: store in local!
+    if max(surplus_parks) > cable_power_cap - min_power_out
+        %caculate power beyond cable_power_cap
+        surplus_beyond_power_cable = max(surplus_parks - (cable_power_cap - min_power_out),0);
+        %store the excess
+        loc_storage_matrix(:,t+1) = loc_storage_matrix(:,t) + surplus_beyond_power_cable;
+
+        disp(loc_storage_matrix(:,t))
+        %Remove the excess from available distrubution
+        surplus_parks = surplus_parks - surplus_beyond_power_cable;
+        %Set these parks power_out to cable_power_cap
+        surplus_beyond_power_cable(surplus_beyond_power_cable ~= 0) = cable_power_cap; %replace the non zero indicies to max cable out
+        power_out_matrix(:,t) = surplus_beyond_power_cable;
+    end
+
+
+    % Remaining surplus and total deficit
+    tot_Surplus = sum(surplus_parks);
+    tot_Deficit = sum(deficit_parks);
+    balance = tot_Surplus - tot_Surplus;
+    % Redistribute power based on the calculated surplus and deficit
+    if balance > 0 
+        %balance/n
 
     end
 
 end
 
 
-
+%%
+%loc_storage_matrix(:,1) = [];
+%power_out_matrix(:,1) = [];
+figure(5)
+plot(X,loc_storage_matrix(1,:))
+figure(6)
+plot(X,power_out_matrix(1,:))
