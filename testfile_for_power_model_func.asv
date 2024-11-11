@@ -8,7 +8,7 @@ Wind_Speed_gre = ReadWindData(path_cre);
 %%
 
 %Park and turbine characteristics
-Rated_Power = 5*10^9; 
+Rated_Power = 5; %*10^9; 
 Rated_Wind = 11;
 Cut_In = 3;
 Cut_Out = 25;
@@ -32,9 +32,9 @@ big_storage_vec = zeros(1,length(X));
 power_diff_vec = zeros(1,n);
 
 %load max and min
-cable_power_cap = 4*10^9;
-min_power_out = 3*10^9;
-loc_storage_cap = 10*10^9; %? It will decrease when adding more parks
+cable_power_cap = 4; %*10^9;
+min_power_out = 3; %*10^9;
+loc_storage_cap = 10; %*10^9; %? It will decrease when adding more parks
 
 %index start 2 to initiate as loop is dependent on i-1
 
@@ -125,53 +125,95 @@ power_out_matrix = zeros(n,T);
 big_storage_vec = zeros(1,T);
 
 %load max and min
-cable_power_cap = 4*10^9;
-min_power_out = 3*10^9;
-loc_storage_cap = 10*10^9; %? It will decrease when adding more parks
+cable_power_cap = 4;%*10^9;
+min_power_out = 3;%*10^9;
+loc_storage_cap = 20;%*10^9; %? It will decrease when adding more parks
 
 
 
-for t = 1:T
+for t = 2:T
     % Calculate power balance for each park
     power_diff_vec = power_matrix(:, t) - min_power_out; 
     
     % Calculate surplus and deficit values for each park
     surplus_parks = max(power_diff_vec, 0);     %if value>0 it gets stored, otherwise it is zero for that index
-    deficit_parks = -min(power_diff_vec, 0);    % If vulue<0 it gets stored, otherwise it is zero for that index
+    deficit_parks = min(power_diff_vec, 0);    % If vulue<0 it gets stored, otherwise it is zero for that index
+    diff_parks = surplus_parks + deficit_parks;
     
     %First case: handel power beyond caple_power_cap: store in local!
-    if max(surplus_parks) > cable_power_cap
+    if max(surplus_parks) > cable_power_cap - min_power_out
         %caculate power beyond cable_power_cap
         surplus_beyond_power_cable = max(surplus_parks - (cable_power_cap - min_power_out),0);
+        
         %store the excess
-        loc_storage_matrix(:,t+1) = loc_storage_matrix(:,t) + surplus_beyond_power_cable;
+        loc_storage_matrix(:,t) = loc_storage_matrix(:,t-1) + surplus_beyond_power_cable;
+        
         %Remove the excess from available distrubution
         surplus_parks = surplus_parks - surplus_beyond_power_cable;
-        disp(surplus_beyond_power_cable)
+        
         %Set these parks power_out to cable_power_cap
         surplus_beyond_power_cable(surplus_beyond_power_cable ~= 0) = cable_power_cap; %replace the non zero indicies to max cable out
-        disp(surplus_beyond_power_cable)
         power_out_matrix(:,t) = surplus_beyond_power_cable;
+    
+    else
+        loc_storage_matrix(:,t) = loc_storage_matrix(:,t-1);      %otherwise, storage reamains the same, is not need here when implemented below
+        big_storage_vec(t) = big_storage_vec(t-1);
     end
-
 
     % Remaining surplus and total deficit
     tot_Surplus = sum(surplus_parks);
     tot_Deficit = sum(deficit_parks);
-    balance = tot_Surplus - tot_Surplus;
-    % Redistribute power based on the calculated surplus and deficit
-    if balance > 0 
-        %balance/n
+    balance = tot_Surplus + tot_Deficit;
+    
+    % if balance is exacly zero, all has min_power.
+    if balance == 0
+        power_out_matrix(:,t) = min_power_out;
+        big_storage_vec(t) = big_storage_vec(t-1);
+        
+    % if balance > 0, all surplus can be distributed evenly for all parks (easy scenario)
+    elseif balance > 0 
+        power_out_matrix(:,t) = balance/n + min_power_out;
+        big_storage_vec(t) = big_storage_vec(t-1);
+       
+    % if balance < 0, 
+    elseif balance < 0
+        
+        %This should handle a re-distrubution of power
+
+
+        %This section takes from local storage, otherwise from big.
+
+        %Remove deficit energy from storage
+        currentStorage = loc_storage_matrix(:,t-1) + deficit_parks;
+      
+        %store the negative values, the ones that has not enough energy
+        energy_left = currentStorage(currentStorage < 0);
+        if isempty(energy_left)
+            energy_left = 0;
+        end
+        energy_left = sum(energy_left);
+
+        %then replace all negative values with zeros, as big storage takes
+        %take
+        currentStorage(currentStorage < 0) = 0;
+     
+        loc_storage_matrix(:,t) = currentStorage;
+        %
+        big_storage_vec(t) = big_storage_vec(t-1) + energy_left;
+
+        power_out_matrix(:,t) = min_power_out;
 
     end
-
 end
 
 
 %%
 %loc_storage_matrix(:,1) = [];
 %power_out_matrix(:,1) = [];
+
 figure(5)
 plot(X,loc_storage_matrix(1,:))
 figure(6)
 plot(X,power_out_matrix(1,:))
+figure(7)
+plot(X,big_storage_vec)
