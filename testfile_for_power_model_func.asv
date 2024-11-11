@@ -170,15 +170,25 @@ for t = 2:T
         power_out_matrix(:,t) = min_power_out;
         big_storage_vec(t) = big_storage_vec(t-1);
         
-    % if balance > 0, all surplus can be distributed evenly for all parks (easy scenario)
+    % if balance > 0, all surplus can be distributed evenly for all parks,
+    % or store excess locally or in big storage 
     elseif balance > 0 
-        power_out_matrix(:,t) = balance/n + min_power_out;
-        big_storage_vec(t) = big_storage_vec(t-1);
-       
+        %power_out_matrix(:,t) = balance/n + min_power_out;
+        %big_storage_vec(t) = big_storage_vec(t-1);
+
+        %store excess in big storage, assumes that 
+        power_out_matrix(:,t) = min_power_out;
+        big_storage_vec(t) = big_storage_vec(t-1) + balance;
+
     % if balance < 0, 
     elseif balance < 0
         
         %This should handle a re-distrubution of power
+
+
+
+
+
 
 
         %This section takes from local storage, otherwise from big.
@@ -194,13 +204,16 @@ for t = 2:T
         energy_left = sum(energy_left);
 
         %then replace all negative values with zeros, as big storage takes
-        %take
+        %takes the capacity the local cannot
         currentStorage(currentStorage < 0) = 0;
      
+        %update local storage
         loc_storage_matrix(:,t) = currentStorage;
-        %
+        
+        %update big storage for the amount the locals cannot handle
         big_storage_vec(t) = big_storage_vec(t-1) + energy_left;
 
+        %set power to min as the storages handels the power.
         power_out_matrix(:,t) = min_power_out;
 
     end
