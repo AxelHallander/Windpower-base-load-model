@@ -120,6 +120,9 @@ n = 2; %number of parks
 T = length(X); % number of timesteps
 
 power_matrix = [power_vec; power_vec2];    % Power output data for each park over time
+region = ['S';'SE'];
+regions = unique(region);  % Get unique regions ('S' and 'SE')
+
 loc_storage_matrix = zeros(n,T);
 power_out_matrix = zeros(n,T);
 big_storage_vec = zeros(1,T);
@@ -128,6 +131,9 @@ big_storage_vec = zeros(1,T);
 cable_power_cap = 4;%*10^9;
 min_power_out = 3;%*10^9;
 loc_storage_cap = 20;%*10^9; %? It will decrease when adding more parks
+
+%efficiency for storage and transmission
+regional_efficiency = 0.99;
 
 
 
@@ -176,14 +182,87 @@ for t = 2:T
         %power_out_matrix(:,t) = balance/n + min_power_out;
         %big_storage_vec(t) = big_storage_vec(t-1);
 
-        %store excess in big storage, assumes that 
+        %store excess in big storage, assumes that suplus distributes to
+        %the deficit parks also. Introduce some effeciencies. 
         power_out_matrix(:,t) = min_power_out;
         big_storage_vec(t) = big_storage_vec(t-1) + balance;
+
+        %introduce coordinate system. Calculate distances between each park
+        %and hence create a efficiency matrix.This can be done separetely
+        %before this loop. In this loop, check which needs power and which
+        %can give, then compare to efficiency matrix to see how the
+        %transmission occurs.
 
     % if balance < 0, 
     elseif balance < 0
         
         %This should handle a re-distrubution of power
+
+
+        % Step 1: Distribute power within the same region
+        region_excess_power = zeros(1,length(regions));
+        for r = 1:length(regions)
+            % Get indices of parks in the current region
+            region_Indices = find(region == regions(r));
+        
+            % Extract regional surplus and deficit
+            regionalSurplus = surplus_parks(region_Indices);
+            regionalDeficit = deficit_parks(region_Indices);
+        
+            % Total regional surplus and deficit
+            tot_Regional_Surplus = sum(regionalSurplus);
+            tot_Regional_Deficit = sum(regionalDeficit);
+        
+            % Attempt to cover the regional deficit using regional surplus
+            if tot_Regional_Surplus >= tot_Regional_Deficit
+                % Cover the entire regional deficit with regional surplus
+                region_excess_power(r) = (tot_Regional_Surplus - surplus_parks)*regional_efficiency;
+                
+            else
+                % Distribute remaining regional surplus to parks with least local storage
+              
+                % Sort parks by their current local storage (ascending order)
+                [~, sortedIndices] = sort(loc_storage_matrix(region_Indices, t-1), 'ascend');
+        
+                % Allocate remaining surplus based on sorted order of local storage
+                for idx = sortedIndices'
+                    if tot_Regional_Surplus <= 0
+                        break;
+                    end
+                    % Determine the amount to allocate to this park
+                    allocation = min(regionalSurplus(idx), tot_Regional_Surplus)/regional_efficiency;
+                    surplus_parks(region_Indices(idx)) = regionalSurplus(idx) - allocation;
+                    deficit_parks(regionIndices(idx)) = regionalDeficit(idx) - allocation;
+                    tot_Regional_Surplus = tot_Regional_Surplus - allocation;
+                    tot_Regional_Deficit = tot_Regional_Deficit - allocation;
+                end 
+            end
+            region_deficit_power(r) = 
+        end
+
+        % Step 2: Distribute remaining surplus across regions
+        tot_Remaining_Surplus = sum(region_excess_power);
+        tot_Remaining_Deficit = sum(deficit_parks);
+        
+        if tot_Remaining_Surplus > 0
+            
+
+
+        
+        if tot_Remaining_Surplus >= tot_Remaining_Deficit
+            % Cover the entire remaining deficit with remaining surplus
+            redistribution = min(remainingSurplus, remainingDeficit);
+            remainingSurplus = remainingSurplus - redistribution;
+            remainingDeficit = remainingDeficit - redistribution;
+        else
+            % Proportionally distribute remaining surplus
+            if tot_Remaining_Surplus > 0
+                redistribution = remainingSurplus .* (remainingDeficit / tot_Remaining_Deficit);
+                redistribution(isnan(redistribution)) = 0;  % Handle NaN (division by zero)
+                remainingSurplus = remainingSurplus - redistribution;
+                remainingDeficit = remainingDeficit - redistribution;
+            end
+        end
 
 
 
