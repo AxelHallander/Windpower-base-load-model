@@ -120,7 +120,7 @@ n = 2; %number of parks
 T = length(X); % number of timesteps
 
 power_matrix = [power_vec; power_vec2];    % Power output data for each park over time
-region = ['S';'SE'];
+region = ['1','2']; %regions must be in order, if S and E then it switches order to [E;S], must also only be one letter
 regions = unique(region);  % Get unique regions ('S' and 'SE')
 
 loc_storage_matrix = zeros(n,T);
@@ -137,7 +137,7 @@ regional_efficiency = 0.99;
 
 
 
-for t = 2:T
+for t = 2:10
     % Calculate power balance for each park
     power_diff_vec = power_matrix(:, t) - min_power_out; 
     
@@ -183,7 +183,7 @@ for t = 2:T
         %big_storage_vec(t) = big_storage_vec(t-1);
 
         %store excess in big storage, assumes that suplus distributes to
-        %the deficit parks also. Introduce some effeciencies. 
+        %the deficit parks also. Need to Introduce some effeciencies. 
         power_out_matrix(:,t) = min_power_out;
         big_storage_vec(t) = big_storage_vec(t-1) + balance;
 
@@ -198,27 +198,28 @@ for t = 2:T
         
         %This should handle a re-distrubution of power
 
-
-        % Step 1: Distribute power within the same region
+        %Step 1: Distribute local exess to parks in the same regions with
+        %deficit, prioritzes parks with least storage. Loops for each region.
+        
         region_excess_power = zeros(1,length(regions));
         region_deficit_power = zeros(1,length(regions));
-
+    
         for r = 1:length(regions)
             % Get indices of parks in the current region
             region_Indices = find(region == regions(r));
-        
+          
             % Extract regional surplus and deficit
             regionalSurplus = surplus_parks(region_Indices);
             regionalDeficit = deficit_parks(region_Indices);
         
             % Total regional surplus and deficit
             tot_Regional_Surplus = sum(regionalSurplus);
-            tot_Regional_Deficit = sum(regionalDeficit);
-        
+            tot_Regional_Deficit = -sum(regionalDeficit);
+         
             % Attempt to cover the regional deficit using regional surplus
             if tot_Regional_Surplus >= tot_Regional_Deficit
                 % Cover the entire regional deficit with regional surplus
-                region_excess_power(r) = (tot_Regional_Surplus - surplus_parks)*regional_efficiency;
+                region_excess_power(r) = (tot_Regional_Surplus - tot_Regional_Deficit)*regional_efficiency;
                 
             else
                 % Distribute remaining regional surplus to parks with least local storage
@@ -234,36 +235,60 @@ for t = 2:T
                     % Determine the amount to allocate to this park
                     allocation = min(regionalSurplus(idx), tot_Regional_Surplus)/regional_efficiency;
                     surplus_parks(region_Indices(idx)) = regionalSurplus(idx) - allocation;
-                    deficit_parks(regionIndices(idx)) = regionalDeficit(idx) - allocation;
+                    deficit_parks(region_Indices(idx)) = regionalDeficit(idx) - allocation;
                     tot_Regional_Surplus = tot_Regional_Surplus - allocation;
                     tot_Regional_Deficit = tot_Regional_Deficit - allocation;
                 end 
             end
             region_deficit_power(r) = tot_Regional_Deficit;
         end
+           
+        % Step 2: Distribute remaining surplus across/between regions. If there is power remainging (tot_remainging_surplus)
+        % then distribute this to other regions, If there is still more, move to another region. 
+        disp(region_deficit_power)
+        disp(region_excess_power)
 
-        % Step 2: Distribute remaining surplus across regions
         tot_Remaining_Surplus = sum(region_excess_power);
-        tot_Remaining_Deficit = sum(deficit_parks);
+        tot_Remaining_Deficit = sum(region_deficit_power);
+       
+    
+
+        %gå in i en region med mest deficit och lös
+        %om det finns kvar, gå in i nästa
+
+        %find parks, only for the ones with deficit
+        region_index_deficit = find(region_deficit_power > 0);      
+        remaining_regions = regions(region_index_deficit);
         
-
-        % If there is power remainging, aka in tot_remainging_surplus, then
-        % distribute this somehow. Maybe go back to step 1 and do that all
-        % again and add the surplus to: tot_regional_surplus. If there is
-        % still morw, move to the other region. 
-
-        if tot_Remaining_Surplus > 0
-          
-
+        %while there is reaminging surplus
+        while  tot_Remaining_Surplus > 0
+            available_power = tot_Remaining_Surplus;
+            [surplus_parks,deficit_parks,region_excess_power,region_deficit_power] = prioritized_transmission(surplus_parks,deficit_parks,region,remaining_regions,regional_efficiency,loc_storage_matrix,t,available_power);
+            tot_Regional_Surplus = sum(region_excess_power);
         end
 
 
+        % while tot_Remaining_Surplus > 0
+        % 
+        %     for r = remaining_regions
+        %         available_power = tot_Remaining_Surplus;
+        % 
+        % 
+        %         [surplus_parks,deficit_parks,region_excess_power,region_deficit_power] = prioritized_transmission(surplus_parks,deficit_parks,region,remaining_regions,regional_efficiency,loc_storage_matrix,t,available_power);
+        %         tot_Remaining_Surplus = sum(region_excess_power);
+        % 
+        %     end
+        % 
+        % end
 
 
 
 
-        
-        % Step 3: This section takes from local storage, otherwise from big.
+
+
+
+        % Step 3:After possible transmission, this section takes from local
+        % storage if it is not empty otherwise from big.
 
         %Remove deficit energy from storage
         currentStorage = loc_storage_matrix(:,t-1) + deficit_parks;
@@ -290,6 +315,9 @@ for t = 2:T
 
     end
 end
+
+
+%%
 
 
 %%
