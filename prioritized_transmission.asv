@@ -1,9 +1,8 @@
-function [surplus_parks,deficit_parks,region_excess_power,region_deficit_power] = prioritized_transmission(surplus_parks,deficit_parks,region,regions,regional_efficiency,loc_storage_matrix,t,available_power)
+function [surplus_parks,deficit_parks] = prioritized_transmission(surplus_parks,deficit_parks,region,regions,regional_efficiency,loc_storage_matrix,t,available_power)
     
-% Step 1: Distribute power within the same region
-    region_excess_power = zeros(1,length(regions));
-    region_deficit_power = zeros(1,length(regions));
+    % Step 2: Distribute power over different regions
 
+    % loop over regions
     for r = 1:length(regions)
         % Get indices of parks in the current region
         region_Indices = find(region == regions(r));
@@ -16,7 +15,7 @@ function [surplus_parks,deficit_parks,region_excess_power,region_deficit_power] 
         tot_Regional_Surplus = sum(regionalSurplus);
         tot_Regional_Deficit = -sum(regionalDeficit);
      
-        %just add excess available power the first runtrough
+        % Just add excess available power the first runtrough
         if r == 1
             tot_Regional_Surplus = tot_Regional_Surplus + available_power;
         end
@@ -25,6 +24,9 @@ function [surplus_parks,deficit_parks,region_excess_power,region_deficit_power] 
         if tot_Regional_Surplus >= tot_Regional_Deficit
             % Cover the entire regional deficit with regional surplus
             tot_Regional_Surplus = (tot_Regional_Surplus - tot_Regional_Deficit)*regional_efficiency;
+            
+            % Set the parks in questions to have no more deficit
+            deficit_parks(region_Indices) = 0;
             
         else
             % Distribute remaining regional surplus to parks with least local storage
@@ -37,20 +39,21 @@ function [surplus_parks,deficit_parks,region_excess_power,region_deficit_power] 
                 if tot_Regional_Surplus <= 0
                     break;
                 end
-                % Determine the amount to allocate to this park
                 
-                allocation = deficit_parks(region_Indices(idx))/regional_efficiency;
-                if tot_Regional_Surplus > allocation
-                    tot_Regional_Surplus = tot_Regional_Surplus - allocation;
+                % Determine the amount to allocate to this park
+                allocation = abs(deficit_parks(region_Indices(idx)));
+                
+                allocation = min(regional_Surplus(idx), tot_Regional_Surplus);
 
+                if tot_Regional_Surplus > allocation
+                    tot_Regional_Surplus = tot_Regional_Surplus - allocation/regional_efficiency; %remove allocation and the efficiency loss
                 else
-                    allocation = tot_Regional_Surplus;
+                    allocation = tot_Regional_Surplus*regional_efficiency; %takes the remainder of power with efficiency loss
+                    tot_Regional_Surplus = 0;
                 end
 
-                deficit_parks(region_Indices(idx)) = regionalDeficit(idx) + allocation;
-                tot_Regional_Surplus = tot_Regional_Surplus - allocation;
-                tot_Regional_Deficit = tot_Regional_Deficit - allocation;
+                deficit_parks(region_Indices(idx)) = regionalDeficit(idx) + allocation; % 
+
             end 
         end
-        region_deficit_power(r) = tot_Regional_Deficit;
     end
