@@ -44,6 +44,7 @@ loc_storage_cap = 20;       %*10^9; %? It will decrease when adding more parks
 
 %efficiency for storage and transmission
 regional_efficiency = 0.99;
+across_regions_efficiency = 0.95;
 
 
 
@@ -168,11 +169,11 @@ for t = 2:T
             %remainder to big storage. 
             available_power = tot_Remaining_Surplus;
     
-            [surplus_parks,deficit_parks] = prioritized_transmission(surplus_parks,deficit_parks,region,remaining_regions,regional_efficiency,loc_storage_matrix,t,available_power);
+            [surplus_parks,deficit_parks] = prioritized_transmission(surplus_parks,deficit_parks,region,remaining_regions,across_regions_efficiency,loc_storage_matrix,t,available_power);
            
             tot_Remaining_Surplus = sum(surplus_parks + deficit_parks);
             if tot_Remaining_Surplus > 0
-                big_storage_vec(t) = big_storage_vec(t-1) + tot_Remaining_Surplus;
+                big_storage_vec(t) = big_storage_vec(t-1) + tot_Remaining_Surplus*across_regions_efficiency;
             end
         end
 
