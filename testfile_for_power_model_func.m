@@ -39,7 +39,7 @@ big_storage_vec = zeros(1,T);
 
 %load max and min
 cable_power_cap = 4;        %*10^9;
-min_power_out = 3;          %*10^9;
+min_power_out = 2;          %*10^9;
 loc_storage_cap = 20;       %*10^9; %? It will decrease when adding more parks
 
 %efficiency for storage and transmission
@@ -141,10 +141,14 @@ for t = 2:T
                     end
                     % Determine the amount to allocate to this park
                     allocation = min(abs(deficit_parks(region_Indices(idx))), tot_Regional_Surplus);
-                    surplus_parks(region_Indices(idx)) = regional_Surplus(idx) - allocation;
+                    
+                    % Update the affected parks
+                    surplus_parks(region_Indices(idx)) = regional_Surplus(idx) - allocation; %kan vara konstig
                     deficit_parks(region_Indices(idx)) = regional_Deficit(idx) + allocation;
+
+                    % Update the overall balance
                     tot_Regional_Surplus = tot_Regional_Surplus - allocation/regional_efficiency;
-                    tot_Regional_Deficit = tot_Regional_Deficit - allocation/regional_efficiency;
+                    tot_Regional_Deficit = tot_Regional_Deficit - allocation/regional_efficiency; % kan tas bort
                 end 
             end
             region_deficit_power(r) = tot_Regional_Deficit;
@@ -172,7 +176,7 @@ for t = 2:T
             [surplus_parks,deficit_parks] = prioritized_transmission(surplus_parks,deficit_parks,region,remaining_regions,across_regions_efficiency,loc_storage_matrix,t,available_power);
            
             tot_Remaining_Surplus = sum(surplus_parks + deficit_parks);
-            if tot_Remaining_Surplus > 0
+            if tot_Remaining_Surplus > 0           %this wont do anything now... but if we combine the part with balace > 0.
                 big_storage_vec(t) = big_storage_vec(t-1) + tot_Remaining_Surplus*across_regions_efficiency;
             end
         end
