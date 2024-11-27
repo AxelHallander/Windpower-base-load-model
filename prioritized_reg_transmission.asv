@@ -48,8 +48,9 @@ function [surplus_parks,deficit_parks] = prioritized_reg_transmission(surplus_pa
                     allocation = tot_Regional_Surplus*regional_efficiency; %takes the remainder of power with efficiency loss
                     tot_Regional_Surplus = 0;
                 end
-                deficit_parks(region_Indices(idx)) = regionalDeficit(idx) + allocation;
-                surplus_parks(region_Indices(idx)) = regionalSurplus(idx) - allocation/regional_efficiency;
+
+                deficit_parks(region_Indices(idx)) = regionalDeficit(idx) + allocation; %
+                surplus_parks(region_Indices(idx)) = regiregionalSurplus
             end 
         end
     end

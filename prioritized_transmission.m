@@ -1,5 +1,4 @@
 function [surplus_parks,deficit_parks] = prioritized_transmission(surplus_parks,deficit_parks,region,regions,regional_efficiency,loc_storage_matrix,t,available_power)
-    
     % Step 2: Distribute power over different regions
 
     % loop over regions

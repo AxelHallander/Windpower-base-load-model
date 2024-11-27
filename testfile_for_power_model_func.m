@@ -36,6 +36,7 @@ regions = unique(region);  % Get unique regions ('S' and 'SE')
 loc_storage_matrix = zeros(n,T);
 power_out_matrix = zeros(n,T);
 big_storage_vec = zeros(1,T);
+defi = zeros(1,T);
 
 %load max and min
 cable_power_cap = 4;        %*10^9;
@@ -43,11 +44,11 @@ min_power_out = 2;          %*10^9;
 loc_storage_cap = 20;       %*10^9; %? It will decrease when adding more parks
 
 %efficiency for storage and transmission
-regional_efficiency = 0.99;
+regional_efficiency = 1;
 across_regions_efficiency = 1;
 
 
-
+%52576
 for t = 2:T
     % Calculate power balance for each park
     power_diff_vec = power_matrix(:, t) - min_power_out; 
@@ -59,6 +60,7 @@ for t = 2:T
     surplus_parks = max(power_diff_vec, 0);     %if value>0 it gets stored, otherwise it is zero for that index
     deficit_parks = min(power_diff_vec, 0);    % If vulue<0 it gets stored, otherwise it is zero for that index
     diff_parks = surplus_parks + deficit_parks;
+  
     
     %First case: handel power beyond caple_power_cap: store in local!
     if max(surplus_parks) > cable_power_cap - min_power_out
@@ -85,20 +87,19 @@ for t = 2:T
 
     % Step 1: Distribute local exess to parks in the same regions with
     % deficit, prioritzes parks with least storage. Loops for each region.
-    
-    [surplus_parks,deficit_parks,region_excess_power,region_deficit_power] = prioritized_loc_transmission(surplus_parks,deficit_parks,region,regions,regional_efficiency,loc_storage_matrix,t);
 
+    [surplus_parks,deficit_parks,region_excess_power,region_deficit_power] = prioritized_loc_transmission(surplus_parks,deficit_parks,region,regions,regional_efficiency,loc_storage_matrix,t);
+    
     % Step 2: Distribute remaining surplus across/between regions. If there is power remainging (tot_remainging_surplus)
     % then distribute this to other regions, If there is still more, move to another region. 
  
     tot_Remaining_Surplus = sum(region_excess_power);
     tot_Remaining_Deficit = sum(region_deficit_power);
- 
-    %disp(region_excess_power)
-    %disp(region_deficit_power)
-    tot_Remaining_Surplus = tot_Remaining_Surplus-tot_Remaining_Deficit;
-  
-    samma(t) = tot_Remaining_Surplus;
+    
+   % disp(deficit_parks)
+    % disp(surplus_parks)
+    % disp(deficit_parks)
+
     % If there are any power left within regional transmission, handle it between regions
     if tot_Remaining_Surplus > 0
         
@@ -108,23 +109,39 @@ for t = 2:T
       
         %Use function that distributes over all regions. Saves any remainder to big storage. 
         available_power = tot_Remaining_Surplus;
-
-        [surplus_parks,deficit_parks] = prioritized_reg_transmission(surplus_parks,deficit_parks,region,remaining_regions,across_regions_efficiency,loc_storage_matrix,t,available_power);
+   
+        %def1(:,t) = deficit_parks;
         
-        %Update remaining surplus
-        tot_Remaining_Surplus = sum(surplus_parks + deficit_parks);
-
-        if tot_Remaining_Surplus > 0           %if tot balace > 0
-            big_storage_vec(t) = big_storage_vec(t-1) + tot_Remaining_Surplus*across_regions_efficiency;
+        if sum(size(regions)) < 3 && balance > 0 || sum(size(regions)) > 2  %so if they are all in the same region, dont go in here
+            [surplus_parks,deficit_parks] = prioritized_reg_transmission(surplus_parks,deficit_parks,region,remaining_regions,across_regions_efficiency,loc_storage_matrix,t,available_power);
+            %disp(tot_Remaining_Surplus)
         end
-    end
+       
+        %defi(t) = defi(t-1)+sum(deficit_parks);
 
+               %def2(:,t) = deficit_parks;
+        %Update remaining surplus
+        
+        tot_Remaining_Surplus = sum(surplus_parks + deficit_parks);
+        
+        %disp(tot_Remaining_Surplus)
+        if tot_Remaining_Surplus > 0           %if tot balace > 0
+            big_storage_vec(t) = big_storage_vec(t-1) + tot_Remaining_Surplus;
+        end
+    else
+    %defi(t) = defi(t-1)+sum(deficit_parks);
+
+    end
+    defi(t) = defi(t-1)+sum(deficit_parks);
+    def(:,t) = deficit_parks;
+    %deficit_parks
+    %disp(deficit_parks)
     % Step 3:After possible transmission, this section takes from local
     % storage if it is not empty otherwise from big.
 
     %Remove deficit energy from storage
     currentStorage = loc_storage_matrix(:,t) + deficit_parks;
-
+    
     %store the negative values, the ones that has not enough energy
     energy_left = currentStorage(currentStorage < 0);
 
@@ -140,6 +157,8 @@ for t = 2:T
     %update local storage
     loc_storage_matrix(:,t) = currentStorage;
     
+    el(t) = energy_left+el(t-1);
+
     %update big storage for the amount the locals cannot handle
     big_storage_vec(t) = big_storage_vec(t) + energy_left;
 
@@ -147,6 +166,14 @@ for t = 2:T
     power_out_matrix(:,t) = min_power_out;
 end
 
+%big_storage_vec(end)
+%el(end)
+%sum(defi)
+%diff_parks
+%%
+
+
+plot(X,el)
 
 %%
 %loc_storage_matrix(:,1) = [];

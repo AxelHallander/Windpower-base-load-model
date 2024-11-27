@@ -4,7 +4,7 @@ function [surplus_parks,deficit_parks,region_excess_power,region_deficit_power] 
     
     region_excess_power = zeros(1,length(regions));
     region_deficit_power = zeros(1,length(regions));
-
+    
     for r = 1:length(regions)
         % Get indices of parks in the current region
         region_Indices = find(region == regions(r));
@@ -14,17 +14,18 @@ function [surplus_parks,deficit_parks,region_excess_power,region_deficit_power] 
         regional_Deficit = deficit_parks(region_Indices);
     
         % Total regional surplus and deficit
-        tot_Regional_Surplus = sum(regional_Surplus,'all');
-        tot_Regional_Deficit = -sum(regional_Deficit,'all');
+        tot_Regional_Surplus = sum(regional_Surplus);
+        tot_Regional_Deficit = -sum(regional_Deficit);
+        % disp(tot_Regional_Surplus)
         %disp(tot_Regional_Deficit)
-
         % Attempt to cover the regional deficit using regional surplus
-       % if tot_Regional_Surplus >= tot_Regional_Deficit
+        if tot_Regional_Surplus >= tot_Regional_Deficit
             % Cover the entire regional deficit with regional surplus
-            region_excess_power(r) = (tot_Regional_Surplus)*regional_efficiency;
-            region_deficit_power(r) = tot_Regional_Deficit;
+            region_excess_power(r) = (tot_Regional_Surplus - tot_Regional_Deficit)*regional_efficiency;
+            deficit_parks(region_Indices) = 0;
+            %disp(region_excess_power(r))
         % Distribute remaining regional surplus to parks with least local storage
-        %else
+        else
             % Sort parks by their current local storage (ascending order)
             [~, sortedIndices] = sort(loc_storage_matrix(region_Indices, t-1), 'ascend');
     
@@ -37,14 +38,14 @@ function [surplus_parks,deficit_parks,region_excess_power,region_deficit_power] 
                 allocation = min(abs(deficit_parks(region_Indices(idx))), tot_Regional_Surplus);
                 
                 % Update the affected parks
-                surplus_parks(region_Indices(idx)) = regional_Surplus(idx) - allocation; %kan vara konstig
+                %surplus_parks(region_Indices(idx)) = regional_Surplus(idx) - allocation; %kan vara konstig
                 deficit_parks(region_Indices(idx)) = regional_Deficit(idx) + allocation;
-
+                
                 % Update the overall balance
                 tot_Regional_Surplus = tot_Regional_Surplus - allocation/regional_efficiency;
-                %tot_Regional_Deficit = tot_Regional_Deficit - allocation/regional_efficiency; % kan tas bort
+                tot_Regional_Deficit = tot_Regional_Deficit - allocation/regional_efficiency; % kan tas bort
             end 
         end
-        %region_deficit_power(r) = tot_Regional_Deficit;
-   % end
+        region_deficit_power(r) = tot_Regional_Deficit;
+    end
 end
