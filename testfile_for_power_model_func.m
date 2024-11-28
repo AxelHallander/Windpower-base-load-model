@@ -42,11 +42,15 @@ el = zeros(1,T);
 %load max and min
 cable_power_cap = 4;        %*10^9;
 min_power_out = 2;          %*10^9;
-loc_storage_cap = 20;       %*10^9; %? It will decrease when adding more parks
+loc_storage_cap = 50;       %*10^9; %? It will decrease when adding more parks
+loc_storage_low = 10;
+base_load_tol = min_power_out*0.9; %tolerance too store in local
 
 %efficiency for storage and transmission
 regional_efficiency = 0.99;
 across_regions_efficiency = 0.95;
+local_storage_efficiency = 0.8;
+big_storage_efficiency = 0.9;
 
 for t = 2:T
     % Calculate power balance for each park
@@ -87,14 +91,17 @@ for t = 2:T
     % Step 1: Distribute local exess to parks in the same regions with
     % deficit, prioritzes parks with least storage. Loops for each region.
 
-    [surplus_parks,deficit_parks,region_excess_power,region_deficit_power] = prioritized_loc_transmission(surplus_parks,deficit_parks,region,regions,regional_efficiency,loc_storage_matrix,t);
-    
+    [surplus_parks,deficit_parks,region_excess_power,region_deficit_power,loc_storage_matrix] = prioritized_loc_transmission(surplus_parks,deficit_parks,region,regions,regional_efficiency,local_storage_efficiency,loc_storage_low,loc_storage_matrix,t);
+
     % Step 2: Distribute remaining surplus across/between regions. If there is power remainging (tot_remainging_surplus)
     % then distribute this to other regions, If there is still more, move to another region. 
  
     tot_Remaining_Surplus = sum(region_excess_power);
     tot_Remaining_Deficit = sum(region_deficit_power);
     
+    %implement: lokal lagring under en gräns: stora där om man har
+    %överskott/ kan producera lite under min_power_out
+
     % If there are any power left within regional transmission, handle it between regions
     if tot_Remaining_Surplus > 0
         
@@ -110,7 +117,7 @@ for t = 2:T
         tot_Remaining_Surplus = sum(deficit_parks) + tot_Remaining_Surplus;
 
         if tot_Remaining_Surplus > 0           %if tot balace > 0
-            big_storage_vec(t) = big_storage_vec(t-1) + tot_Remaining_Surplus;
+            big_storage_vec(t) = big_storage_vec(t-1) + tot_Remaining_Surplus*big_storage_efficiency;
         end
     end
 
@@ -143,7 +150,8 @@ for t = 2:T
 end
 
 
-
+big_storage_vec(end)
+loc_storage_matrix(end)
 %%
 %loc_storage_matrix(:,1) = [];
 %power_out_matrix(:,1) = [];

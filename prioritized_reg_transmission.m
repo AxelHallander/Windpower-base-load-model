@@ -28,7 +28,7 @@ function [surplus_parks,deficit_parks,tot_Regional_Surplus] = prioritized_reg_tr
             % Distribute remaining regional surplus to parks with least local storage
           
             % Sort parks by their current local storage (ascending order)
-            [~, sortedIndices] = sort(loc_storage_matrix(region_Indices, t-1), 'ascend');
+            [~, sortedIndices] = sort(loc_storage_matrix(region_Indices, t), 'ascend');
     
             % Allocate remaining surplus based on sorted order of local storage
             for idx = sortedIndices'
