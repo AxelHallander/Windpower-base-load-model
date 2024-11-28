@@ -142,7 +142,6 @@ for t = 2:T
     power_out_matrix(:,t) = min_power_out;
 end
 
-big_storage_vec(end)
 
 
 %%
