@@ -1,7 +1,10 @@
-function [surplus_parks,deficit_parks] = prioritized_reg_transmission(surplus_parks,deficit_parks,region,regions,regional_efficiency,loc_storage_matrix,t,available_power)
+function [surplus_parks,deficit_parks,tot_Regional_Surplus] = prioritized_reg_transmission(surplus_parks,deficit_parks,region,regions,regional_efficiency,loc_storage_matrix,t,available_power)
     % Step 2: Distribute power over different regions
-
-    % loop over regions
+    
+    %set the available power to total regional surplus
+    tot_Regional_Surplus = available_power;
+    
+    % loop over regions 
     for r = 1:length(regions)
         % Get indices of parks in the current region
         region_Indices = find(region == regions(r));
@@ -11,19 +14,13 @@ function [surplus_parks,deficit_parks] = prioritized_reg_transmission(surplus_pa
         regionalDeficit = deficit_parks(region_Indices);
     
         % Total regional surplus and deficit
-        tot_Regional_Surplus = sum(regionalSurplus);
         tot_Regional_Deficit = -sum(regionalDeficit);
-     
-        % Just add excess available power the first runtrough
-        if r == 1
-            tot_Regional_Surplus = tot_Regional_Surplus + available_power;
-        end
 
         % Attempt to cover the regional deficit using added regional surplus
         if tot_Regional_Surplus >= tot_Regional_Deficit
             % Cover the entire regional deficit with regional surplus
             tot_Regional_Surplus = (tot_Regional_Surplus - tot_Regional_Deficit)*regional_efficiency;
-            
+           
             % Set the parks in questions to have no more deficit
             deficit_parks(region_Indices) = 0;
             
