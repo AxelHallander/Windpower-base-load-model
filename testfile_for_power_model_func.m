@@ -44,7 +44,8 @@ cable_power_cap = 4;        %*10^9;
 min_power_out = 2;          %*10^9;
 loc_storage_cap = 50;       %*10^9; %? It will decrease when adding more parks
 loc_storage_low = 10;
-base_load_tol = min_power_out*0.9; %tolerance too store in local
+base_load_tol = min_power_out*0.9;                  %tolerance too store in local
+base_load_tol_diff = min_power_out-base_load_tol;   %diff tolerance
 
 %efficiency for storage and transmission
 regional_efficiency = 0.99;
@@ -63,7 +64,7 @@ for t = 2:T
     surplus_parks = max(power_diff_vec, 0);     %if value>0 it gets stored, otherwise it is zero for that index
     deficit_parks = min(power_diff_vec, 0);    % If vulue<0 it gets stored, otherwise it is zero for that index
     diff_parks = surplus_parks + deficit_parks;
-  
+    
     
     %First case: handel power beyond caple_power_cap: store in local!
     if max(surplus_parks) > cable_power_cap - min_power_out
@@ -91,7 +92,7 @@ for t = 2:T
     % Step 1: Distribute local exess to parks in the same regions with
     % deficit, prioritzes parks with least storage. Loops for each region.
 
-    [surplus_parks,deficit_parks,region_excess_power,region_deficit_power,loc_storage_matrix] = prioritized_loc_transmission(surplus_parks,deficit_parks,region,regions,regional_efficiency,local_storage_efficiency,loc_storage_low,loc_storage_matrix,t);
+    [surplus_parks,deficit_parks,region_excess_power,region_deficit_power,loc_storage_matrix,low_storage_indicies] = prioritized_loc_transmission(surplus_parks,deficit_parks,region,regions,regional_efficiency,local_storage_efficiency,loc_storage_low,loc_storage_matrix,base_load_tol_diff,t);
 
     % Step 2: Distribute remaining surplus across/between regions. If there is power remainging (tot_remainging_surplus)
     % then distribute this to other regions, If there is still more, move to another region. 
@@ -145,13 +146,19 @@ for t = 2:T
     %update big storage for the amount the locals cannot handle
     big_storage_vec(t) = big_storage_vec(t) + energy_left;
 
-    %set power to min as the storages handels the power.
+    %set power to min as the storages handels the power
     power_out_matrix(:,t) = min_power_out;
+    
+    %remove power from the parks below the storage limit
+    if  ~(low_storage_indicies == false)   
+        power_out_matrix(:,t) = power_out_matrix(low_storage_indicies,t) - base_load_tol_diff;
+    end
 end
 
 
-big_storage_vec(end)
-loc_storage_matrix(end)
+%big_storage_vec(end)
+%loc_storage_matrix(end)
+
 %%
 %loc_storage_matrix(:,1) = [];
 %power_out_matrix(:,1) = [];
@@ -162,3 +169,4 @@ figure(6)
 plot(X,power_out_matrix(1,:))
 figure(7)
 plot(X,big_storage_vec)
+

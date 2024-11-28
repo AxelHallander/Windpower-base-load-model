@@ -1,11 +1,15 @@
-function [surplus_parks,deficit_parks,region_excess_power,region_deficit_power,loc_storage_matrix] = prioritized_loc_transmission(surplus_parks,deficit_parks,region,regions,regional_efficiency,local_storage_efficiency,loc_storage_low,loc_storage_matrix,t)
+function [surplus_parks,deficit_parks,region_excess_power,region_deficit_power,loc_storage_matrix,indices_below_limit] = prioritized_loc_transmission(surplus_parks,deficit_parks,region,regions,regional_efficiency,local_storage_efficiency,loc_storage_low,loc_storage_matrix,base_load_tol_diff,t)
     
     % Step 1: Distribute local exess to parks in the same regions with
     % deficit, prioritzes parks with least storage. Loops for each region.
-
+    
+    % pre-allocate
     region_excess_power = zeros(1,length(regions));
     region_deficit_power = zeros(1,length(regions));
     
+    % preset indices_below_limit
+    indices_below_limit = false;
+
     %loop for each unique region
     for r = 1:length(regions)
         % Get indices of parks in the current region
@@ -18,6 +22,16 @@ function [surplus_parks,deficit_parks,region_excess_power,region_deficit_power,l
         % Total regional surplus and deficit
         tot_Regional_Surplus = sum(regional_Surplus);
         tot_Regional_Deficit = -sum(regional_Deficit);
+        
+        % Check if any parks in this region have local storage below the limit (logical array)
+        parks_below_limit = loc_storage_matrix(region_Indices, t) < loc_storage_low;
+
+        % If there are parks below this limit:
+        if any(parks_below_limit)
+            % If any of the parks how low storage, drop power level to store energy
+            [loc_storage_matrix,indices_below_limit] = local_storage_tol_power(loc_storage_matrix,local_storage_efficiency,base_load_tol_diff,region_Indices,parks_below_limit,t);
+        end
+
 
         % Attempt to cover the regional deficit using regional surplus
         if tot_Regional_Surplus >= tot_Regional_Deficit
@@ -28,38 +42,14 @@ function [surplus_parks,deficit_parks,region_excess_power,region_deficit_power,l
             % set the deficit parks to zero
             deficit_parks(region_Indices) = 0;
 
-
             % step: if this park-region has excess power, store in local storage if they are below limit
-            [loc_storage_matrix,region_excess_power] = local_storage_excess_low_lim(loc_storage_matrix,region_excess_power,loc_storage_low,local_storage_efficiency,region_Indices,r,t);
+            if any(parks_below_limit)
+                % If any of the parks how low storage, drop power level to store energy
+                [loc_storage_matrix,region_excess_power] = local_storage_excess_low_lim(loc_storage_matrix,region_excess_power,loc_storage_low,local_storage_efficiency,region_Indices,parks_below_limit,r,t);
+            end
 
-            % % Check if any parks in this region have local storage below the limit (logical array)
-            % parks_below_limit = loc_storage_matrix(region_Indices, t) < loc_storage_low;
-            % 
-            % % If there are parks below this limit:
-            % if any(parks_below_limit)
-            % 
-            %     % Get the indices of parks below the limit within the region
-            %     indices_below_limit = region_Indices(parks_below_limit);
-            % 
-            %     %Loop over the parks below the limit
-            %     for p = indices_below_limit
-            %         if region_excess_power(r) > 0
-            %             %get the amount of storage in this park
-            %             current_storage = loc_storage_matrix(p, t);
-            % 
-            %             %decide how much energy to store:
-            %             stored_energy = min(region_excess_power(r), loc_storage_low-current_storage);
-            % 
-            %             %Update storage
-            %             loc_storage_matrix(p, t) = loc_storage_matrix(p, t) + local_storage_efficiency*stored_energy;
-            % 
-            %             %update the excess power
-            %             region_excess_power(r) = region_excess_power(r) - stored_energy;
-            % 
-            %         end
-            %     end     
-            % end
-            
+
+
         % Distribute remaining regional surplus to parks with least local storage
         else
             % Sort parks by their current local storage (ascending order)
