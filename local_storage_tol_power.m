@@ -2,11 +2,12 @@ function [loc_storage_matrix,indices_below_limit] = local_storage_tol_power(loc_
 % Function that stores energy in local storage if the local storage is 
 % under the "loc_storage_low" limit. Then it remembers the parks which did
 % this and will remove this power from the power_out_matrix in the model
-% script
+% script. This means that even if a particular park has power deficit it
+% will still store in local as it will get power elsewhere. 
 
     % Get the indices of parks below the limit within the region
     indices_below_limit = region_Indices(parks_below_limit);
-    
+
     %Loop over the parks indicies below the limit
     for p = indices_below_limit
 

@@ -39,10 +39,10 @@ big_storage_vec = zeros(1,T);
 defi = zeros(1,T);
 el = zeros(1,T);
 
-%load max and min
-cable_power_cap = 4;        %*10^9;
-min_power_out = 2;          %*10^9;
-loc_storage_cap = 50;       %*10^9; %? It will decrease when adding more parks
+%load max and min, all are in GIGA
+cable_power_cap = 4;        
+min_power_out = 3;              %rename: power demand
+loc_storage_cap = 50;      
 loc_storage_low = 10;
 base_load_tol = min_power_out*0.9;                  %tolerance too store in local
 base_load_tol_diff = min_power_out-base_load_tol;   %diff tolerance
@@ -66,42 +66,35 @@ for t = 2:T
     diff_parks = surplus_parks + deficit_parks;
     
     
-    %First case: handel power beyond caple_power_cap: store in local!
-    if max(surplus_parks) > cable_power_cap - min_power_out
-        %caculate power beyond cable_power_cap
-        surplus_beyond_power_cable = max(surplus_parks - (cable_power_cap - min_power_out),0);
-        
-        %store the excess
-        loc_storage_matrix(:,t) = loc_storage_matrix(:,t-1) + surplus_beyond_power_cable;
-
-        %Remove the excess from available distrubution
-        surplus_parks = surplus_parks - surplus_beyond_power_cable;
-        
-        %Set these parks power_out to cable_power_cap
-        surplus_beyond_power_cable(surplus_beyond_power_cable ~= 0) = cable_power_cap; %replace the non zero indicies to max cable out
-        power_out_matrix(:,t) = surplus_beyond_power_cable;
-    else
-        loc_storage_matrix(:,t) = loc_storage_matrix(:,t-1);      %otherwise, storage reamains the same, is not need here when implemented below
+    %Step 1: handle power beyond caple_power_cap: store in local!
+    
+    % Create a logical array for parks exceeding the cable power cap
+    parks_beyond = surplus_parks > (cable_power_cap - min_power_out);
+    
+    % If there are no parks with power beyond caple_power_cap, loc_storage remains the same
+    if ~any(parks_beyond)
+        loc_storage_matrix(:, t) = loc_storage_matrix(:, t-1); % Storage remains unchanged 
+    % Else go inside a function that updated loc storage and surplus parks
+    else 
+        [surplus_parks,loc_storage_matrix] = local_storage_beyond_transmisson_lim(parks_beyond,surplus_parks,loc_storage_matrix,cable_power_cap,min_power_out,t);
     end
 
+    
     % Remaining surplus and total deficit
     tot_Surplus = sum(surplus_parks);
     tot_Deficit = sum(deficit_parks);
     balance = tot_Surplus + tot_Deficit;
 
-    % Step 1: Distribute local exess to parks in the same regions with
+    % Step 2: Distribute local exess to parks in the same regions with
     % deficit, prioritzes parks with least storage. Loops for each region.
 
     [surplus_parks,deficit_parks,region_excess_power,region_deficit_power,loc_storage_matrix,low_storage_indicies] = prioritized_loc_transmission(surplus_parks,deficit_parks,region,regions,regional_efficiency,local_storage_efficiency,loc_storage_low,loc_storage_matrix,base_load_tol_diff,t);
 
-    % Step 2: Distribute remaining surplus across/between regions. If there is power remainging (tot_remainging_surplus)
+    % Step 3: Distribute remaining surplus across/between regions. If there is power remainging (tot_remainging_surplus)
     % then distribute this to other regions, If there is still more, move to another region. 
  
     tot_Remaining_Surplus = sum(region_excess_power);
     tot_Remaining_Deficit = sum(region_deficit_power);
-    
-    %implement: lokal lagring under en gräns: stora där om man har
-    %överskott/ kan producera lite under min_power_out
 
     % If there are any power left within regional transmission, handle it between regions
     if tot_Remaining_Surplus > 0
@@ -122,7 +115,7 @@ for t = 2:T
         end
     end
 
-    % Step 3:After possible transmission, this section takes from local
+    % Step 4: After possible transmission, this section takes from local
     % storage if it is not empty otherwise from big.
 
     %Remove deficit energy from storage
@@ -136,8 +129,7 @@ for t = 2:T
     end
     energy_left = sum(energy_left);
     
-    %then replace all negative values with zeros, as big storage takes
-    %takes the capacity the local cannot
+    %then replace all negative values with zeros, as big storage takes takes the capacity the local cannot
     currentStorage(currentStorage < 0) = 0;
 
     %update local storage
@@ -150,8 +142,8 @@ for t = 2:T
     power_out_matrix(:,t) = min_power_out;
     
     %remove power from the parks below the storage limit
-    if  ~(low_storage_indicies == false)   
-        power_out_matrix(:,t) = power_out_matrix(low_storage_indicies,t) - base_load_tol_diff;
+    if  ~(low_storage_indicies == false)  
+        power_out_matrix(low_storage_indicies,t) = power_out_matrix(low_storage_indicies,t) - base_load_tol_diff;
     end
 end
 
