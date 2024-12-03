@@ -19,7 +19,7 @@ power_vec = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,Wind_Speed_
 power_vec2 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,Wind_Speed_gre,Sum);
 
 %% Detta är en bättre approach!! Skippar en for loop, toppen!
-
+tic;
 % Initialize power and storage matrices (T x N)
 
 %X-vector
@@ -76,9 +76,19 @@ for t = 2:T
         loc_storage_matrix(:, t) = loc_storage_matrix(:, t-1); % Storage remains unchanged 
     % Else go inside a function that updated loc storage and surplus parks
     else 
-        [surplus_parks,loc_storage_matrix] = local_storage_beyond_transmisson_lim(parks_beyond,surplus_parks,loc_storage_matrix,cable_power_cap,min_power_out,t);
-    end
+        % pre-allocate
+        surplus_beyond = zeros(size(surplus_parks));
 
+        % calulcate the power beyond transmission cable
+        surplus_beyond(parks_beyond) = surplus_parks(parks_beyond) - (cable_power_cap - min_power_out);
+        
+        % Update local storage for the affected parks
+        loc_storage_matrix(:, t) = loc_storage_matrix(:, t-1);
+        loc_storage_matrix(parks_beyond, t) = loc_storage_matrix(parks_beyond, t) + surplus_beyond(parks_beyond);
+        
+        % Remove the excess from available distribution for affected parks
+        surplus_parks(parks_beyond) = surplus_parks(parks_beyond) - surplus_beyond(parks_beyond);     
+    end
     
     % Remaining surplus and total deficit
     tot_Surplus = sum(surplus_parks);
@@ -148,6 +158,7 @@ for t = 2:T
 end
 
 
+toc;
 %big_storage_vec(end)
 %loc_storage_matrix(end)
 
