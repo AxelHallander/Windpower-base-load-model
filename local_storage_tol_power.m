@@ -1,4 +1,4 @@
-function [loc_storage_matrix,indices_below_limit] = local_storage_tol_power(loc_storage_matrix,local_storage_efficiency,base_load_tol_diff,region_Indices,parks_below_limit,t)
+function [loc_storage_matrix,indices_below_limit] = local_storage_tol_power(loc_storage_matrix,local_storage_efficiency,base_load_tol_diff,region_Indices,parks_below_limit,t,r)
 % Function that stores energy in local storage if the local storage is 
 % under the "loc_storage_low" limit. Then it remembers the parks which did
 % this and will remove this power from the power_out_matrix in the model
@@ -12,7 +12,7 @@ function [loc_storage_matrix,indices_below_limit] = local_storage_tol_power(loc_
     for p = indices_below_limit
 
         %decide how much energy to store:
-        stored_energy = base_load_tol_diff;
+        stored_energy = base_load_tol_diff(r);     %this is vector now...    
 
         %Update storage
         loc_storage_matrix(p, t) = loc_storage_matrix(p, t) + local_storage_efficiency*stored_energy;            

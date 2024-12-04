@@ -29,7 +29,7 @@ function [surplus_parks,deficit_parks,region_excess_power,region_deficit_power,l
         % If there are parks below this limit:
         if any(parks_below_limit)
             % If any of the parks how low storage, drop power level to store energy
-            [loc_storage_matrix,indices_below_limit] = local_storage_tol_power(loc_storage_matrix,local_storage_efficiency,base_load_tol_diff,region_Indices,parks_below_limit,t);
+            [loc_storage_matrix,indices_below_limit] = local_storage_tol_power(loc_storage_matrix,local_storage_efficiency,base_load_tol_diff,region_Indices,parks_below_limit,t,r);
         end
 
 

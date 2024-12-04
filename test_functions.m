@@ -57,7 +57,7 @@ plot(X,p)
 
 %%
 path_spa = "C:\Users\axel_\Documents\MATLAB\windpower-baseload-project\model\data\spa_gri_18-23.grib";
-path_cre = "C:\Users\axel_\Documents\MATLAB\windpower-baseload-project\model\data\grece_crete18-23.grib";
+path_cre = "C:\Users\axel_\Documents\MATLAB\windpower-baseload-project\model\data\grece_crete_18-23.grib";
 
 %Read data and windspeeds
 Wind_Speed_spa = ReadWindData(path_spa);
@@ -80,7 +80,7 @@ power_vec2 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,Wind_Speed
 %%
 tic;
 power_matrix = [power_vec; power_vec2];    % Power output data for each park over time
-region = ["1","1"]; %regions must be in order, if S and E then it switches order to [E;S], must also only be one letter
+region = ["1","2"]; %regions must be in order, if S and E then it switches order to [E;S], must also only be one letter
 regions = unique(region);  % Get unique regions ('S' and 'SE')
 
 %pre-allocate arrays: Initialize power and storage matrices (T x N)
@@ -95,11 +95,15 @@ big_storage_charge = zeros(1,T);
 
 %load max and min, all are in GIGA
 cable_power_cap = 4;        
-min_power_out = 2;              %rename: power demand
+base_power_demand = ones(1,T)*2;             
 loc_storage_cap = 50;      
 loc_storage_low = 10;
-base_load_tol = min_power_out*0.9;                  %tolerance too store in local
-base_load_tol_diff = min_power_out-base_load_tol;   %diff tolerance
+base_load_tol_constant = 0.9;                  %tolerance too store in local
+
+
+min_power_out = expand_demand_matrix(base_power_demand,n,T,region);
+
+
 
 %efficiency for storage and transmission
 regional_efficiency = 0.99;
@@ -110,8 +114,11 @@ big_storage_efficiency = 0.9;
 %%
 for t = 2:T
     % Calculate power balance for each park
-    power_diff_vec = power_matrix(:, t) - min_power_out; 
+    power_diff_vec = power_matrix(:, t) - min_power_out(t); 
     
+    base_load_tol = min_power_out(t)*base_load_tol_constant;  
+    base_load_tol_diff = min_power_out(t)-base_load_tol;   %diff tolerance
+
     % Set the currents big storage to the previous
     big_storage_vec(t) = big_storage_vec(t-1);
     
@@ -124,7 +131,7 @@ for t = 2:T
     %Step 1: handle power beyond caple_power_cap: store in local!
     
     % Create a logical array for parks exceeding the cable power cap
-    parks_beyond = surplus_parks > (cable_power_cap - min_power_out);
+    parks_beyond = surplus_parks > (cable_power_cap - min_power_out(t));
     
     % If there are no parks with power beyond caple_power_cap, loc_storage remains the same
     if ~any(parks_beyond)
@@ -135,7 +142,7 @@ for t = 2:T
         surplus_beyond = zeros(size(surplus_parks));
 
         % calulcate the power beyond transmission cable
-        surplus_beyond(parks_beyond) = surplus_parks(parks_beyond) - (cable_power_cap - min_power_out);
+        surplus_beyond(parks_beyond) = surplus_parks(parks_beyond) - (cable_power_cap - min_power_out(t));
         
         % Update local storage for the affected parks
         loc_storage_matrix(:, t) = loc_storage_matrix(:, t-1);
@@ -211,7 +218,7 @@ for t = 2:T
     big_storage_vec(t) = big_storage_vec(t) + energy_left;
 
     %set power to min as the storages handels the power
-    power_out_matrix(:,t) = min_power_out;
+    power_out_matrix(:,t) = min_power_out(t);
     
     %remove power from the parks below the storage limit
     if  ~(low_storage_indicies == false)  
