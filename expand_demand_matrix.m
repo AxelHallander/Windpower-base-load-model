@@ -1,8 +1,7 @@
 function min_power_out = expand_demand_matrix(base_power_demand,n,T,region)
 % This function expands the demand matrix to make it to equal size as
-% the power matrix.   matrixthe power demand and copies its rows for
-% the corresponding 
-
+% the power matrix. It checks for each park which region it belongs to and
+% then copies the demandside of that region. 
 
     % Initialize the min_power_out matrix
     min_power_out = zeros(n, T);

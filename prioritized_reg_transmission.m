@@ -1,10 +1,13 @@
-function [surplus_parks,deficit_parks,tot_Regional_Surplus] = prioritized_reg_transmission(surplus_parks,deficit_parks,region,regions,regional_efficiency,loc_storage_matrix,t,available_power)
-    % Step 2: Distribute power over different regions
+function [surplus_parks,deficit_parks,tot_Regional_Surplus] = prioritized_reg_transmission(surplus_parks, ...
+         deficit_parks,region,regions,regional_efficiency,loc_storage_matrix,t,available_power)
+
+% Step 3: (Inter-regions) Distribute power across different regions.
+% Prioritizes parks with lowest storage.
     
     %set the available power to total regional surplus
     tot_Regional_Surplus = available_power;
 
-    % loop over regions 
+    % Loop over regions 
     for r = 1:length(regions)
         % Get indices of parks in the current region
         region_Indices = find(region == regions(r));
@@ -45,7 +48,8 @@ function [surplus_parks,deficit_parks,tot_Regional_Surplus] = prioritized_reg_tr
                     allocation = tot_Regional_Surplus*regional_efficiency; %takes the remainder of power with efficiency loss
                     tot_Regional_Surplus = 0;
                 end
-
+                
+                % Update affected parks
                 deficit_parks(region_Indices(idx)) = regionalDeficit(idx) + allocation;
                 surplus_parks(region_Indices(idx)) = regionalSurplus(idx) - allocation/regional_efficiency;
             end 
