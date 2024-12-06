@@ -1,4 +1,13 @@
 function BaseLoadMatrix = Baseload(years, Regions, CSV_file)
+
+    nYears = years(2)-years(1)+1;
+    LeapYear = zeros(1,nYears);
+    for i = 1:nYears
+        CurrentYear = years(1)+i-1;
+        if mod(CurrentYear, 4) == 0
+            LeapYear(i)=1;
+        end
+    end
     
     % Dictionaries for storing data
     Loads = containers.Map();
@@ -52,8 +61,17 @@ function BaseLoadMatrix = Baseload(years, Regions, CSV_file)
         fittedParams = lsqcurvefit(@(params, t) sinusoidalModel(params, t), initialParams, numericDates, loadValues, [], [], options);
         
         FittedValues(region{1}) = sinusoidalModel(fittedParams, numericDates);
-        HourlyLoads(region{1}) = repelem(FittedValues(region{1}), 24);
-        HourlyLoads(region{1}) = repmat(HourlyLoads(region{1}), years, 1);
+        HourlyLoadsCurrent = repelem(FittedValues(region{1}), 24);
+        EndValue = HourlyLoadsCurrent(end);
+        LeapYearLoad = [HourlyLoadsCurrent; repmat(EndValue, 24, 1)];
+        HourlyLoads(region{1}) = [];
+        for i = 1:nYears
+            if LeapYear(i) == 1
+                HourlyLoads(region{1}) = [HourlyLoads(region{1}); LeapYearLoad];
+            else
+                HourlyLoads(region{1}) = [HourlyLoads(region{1}); HourlyLoadsCurrent];
+            end
+        end
     end
 
     % Initialize an empty matrix to store the combined arrays
