@@ -41,8 +41,8 @@ LatitudeRes = 1/(GeoInfo.SampleSpacingInLatitude);
 
 WestIndex = ceil((WestBound-RegionWestB)*LongitudeRes + 1);
 EastIndex = floor((EastBound-RegionWestB)*LongitudeRes + 1);
-NorthIndex = floor((RegionNorthB-NorthBound)*LatitudeRes + 1);
-SouthIndex = ceil((RegionNorthB-SouthBound)*LatitudeRes + 1);
+NorthIndex = ceil((RegionNorthB-NorthBound)*LatitudeRes + 1);
+SouthIndex = floor((RegionNorthB-SouthBound)*LatitudeRes + 1);
 
 WindSpeeds = WindData(NorthIndex:SouthIndex, WestIndex:EastIndex, :);
 
