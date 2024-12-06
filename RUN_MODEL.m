@@ -26,6 +26,20 @@ power_vec = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,Wind_Speed_
 power_vec2 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,Wind_Speed_gre,Sum);
 power_vec3 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,Wind_Speed_adr,Sum);
 
+%% BASELOAD CALCULATION
+
+% Define what countries are 
+Regions = containers.Map();
+Regions('1') = {'SE', 'FI', 'EE', 'LV', 'LT', 'DK', 'NO', 'DE', 'PL'};
+Regions('2') = {'NL', 'BE', 'LU', 'FR', 'IE', 'ES', 'PT'};
+Regions('3') = {'AT', 'SI', 'HR', 'HU', 'RS', 'BA', 'ME', 'XK', 'AL', 'GR', 'MK', 'BG', 'MD', 'RO', 'SK', 'CZ', 'IT', 'CH'};
+
+% Find where the electric load CSV is located
+ElectricLoads_Vilgot = "C:\Users\vilgo\OneDrive\Desktop\Projekt WindBaseload\BIG data\monthly_hourly_load_values_2023.csv";
+
+% Run Baseload function
+BaseloadMatrix = Baseload(6, Regions, ElectricLoads_Vilgot);
+
 %% DEFINED PARAMETERS
 
 %load max and min, all are in GIGA
