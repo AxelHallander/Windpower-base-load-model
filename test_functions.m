@@ -236,3 +236,6 @@ figure(6)
 plot(X,power_out_matrix(2,:))
 figure(7)
 plot(X,big_storage_vec)
+
+%%
+

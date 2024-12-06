@@ -1,20 +1,23 @@
 function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment] = master_model(power_matrix, region, ...
          cable_power_cap, base_power_demand, loc_storage_cap, loc_storage_low, base_load_tol_constant, ...
          regional_efficiency, across_regions_efficiency, local_storage_efficiency, big_storage_efficiency)
-% This functions calculates local storage vectors and power out vectors for each wind park in the system as well as the shared regional storage vector and
-% total curtailment of the system. The input is a power matrix where each column represent one park, a corresponding region array telling which
-% region the parks belong to in order (eg ["1","2","2","3","3"]), a power cap for the transmission cable, the base power demand for each region as a
-% matrix, the local storage capacity, a lower limit for local storage as to prioritize charging, a tolerance factor for deviation from the power
-% demand, and efficiencies for local and regional storage as well as transmission cables. 
+% This functions calculates local storage vectors and power out vectors for each wind park in the system as well 
+% as the shared regional storage vector and total curtailment of the system. The input is a power matrix where each
+% column represent one park, a corresponding region array telling which region the parks belong to in order 
+% (eg ["1","2","2","3","3"]), a power cap for the transmission cable, the base power demand for each region as a
+% matrix, the local storage capacity, a lower limit for local storage as to prioritize charging, a tolerance factor 
+% for deviation from the power demand, and efficiencies for local and regional storage as well as transmission cables. 
 %
-% - Step 1: (Power beyond cable) it checks all parks if they have excess power beyond the tranmission line, if so it store this in the local storage. 
-% - Step 2: (Intra-region) it tries to balance all the parks within each region with regional surplus. If there is regional surplus it charges local storages
-%   if they are below the limit. Also if the parks are below the limit and there is no surplus, it drops the power out by the tolerance amount to store in
-%   local. Lastly regardless surplus, tranmission occurs from the excess parks to the deficit park, ranking the ones with lowest local storage to be helped first.
-% - Step 3: (Inter-regions) Remaining surplus of a region gets send across regions. Transmission prioritizes the parks with least local storage.
-%   Remaining surplus is then charged to the big regional storage.
-% - Step 4: (Storage-discharge) If there is still deficit after the transmission described above the local storage discharges, and if that is
-%   not enough the regional storage discharges. 
+% - Step 1: (Power beyond cable) it checks all parks if they have excess power beyond the tranmission line, if so it 
+%   store this in the local storage. 
+% - Step 2: (Intra-region) it tries to balance all the parks within each region with regional surplus. If there is
+%   regional surplus it charges local storages if they are below the limit. Also if the parks are below the limit and 
+%   there is no surplus, it drops the power out by the tolerance amount to store in local. Lastly regardless surplus, 
+%   tranmission occurs from the excess parks to the deficit park, ranking the ones with lowest local storage to be helped first.
+% - Step 3: (Inter-regions) Remaining surplus of a region gets send across regions. Transmission prioritizes the parks 
+%   with least local storage. Remaining surplus is then charged to the big regional storage.
+% - Step 4: (Storage-discharge) If there is still deficit after the transmission described above the local storage discharges, 
+%   and if that is not enough the regional storage discharges. 
 
     tic;
 
@@ -42,8 +45,8 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment] = mas
         power_diff_vec = power_matrix(:, t) - distributed_min_power_out;
 
         % Calculate base load tolerance and its diff
-        base_load_tol = min_power_out(:,t)*base_load_tol_constant;  
-        base_load_tol_diff = min_power_out(:,t)-base_load_tol;   %diff tolerance
+        base_load_tol = distributed_min_power_out*base_load_tol_constant;  
+        base_load_tol_diff = distributed_min_power_out - base_load_tol;   %diff tolerance
         
         % Set the currents big storage to the previous
         big_storage_vec(t) = big_storage_vec(t-1);
@@ -136,7 +139,7 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment] = mas
         big_storage_vec(t) = big_storage_vec(t) + energy_left;
     
         % Set power to min as the storages handels the power
-        power_out_matrix(:,t) = min_power_out(:,t);
+        power_out_matrix(:,t) = distributed_min_power_out;
         
         % Remove power from the parks below the storage limit
         if  ~(low_storage_indicies == false)  
