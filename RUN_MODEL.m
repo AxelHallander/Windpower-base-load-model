@@ -1,16 +1,19 @@
 %% APPLYING MODEL
 
 %% READ WIND DATA
-path_spa = "C:\Users\axel_\Documents\MATLAB\windpower-baseload-project\model\data\spa_gri_18-23.grib";
-path_cre = "C:\Users\axel_\Documents\MATLAB\windpower-baseload-project\model\data\grece_crete_18-23.grib";
-path_adr = "C:\Users\axel_\Documents\MATLAB\windpower-baseload-project\model\data\spa_adr_18-23.grib";
+path_gri = "C:\Users\axel_\Documents\MATLAB\windpower-baseload-project\data\spa_gri_18-23.grib";
+path_cre = "C:\Users\axel_\Documents\MATLAB\windpower-baseload-project\data\grece_crete_18-23.grib";
+path_adr = "C:\Users\axel_\Documents\MATLAB\windpower-baseload-project\data\spa_adr_18-23.grib";
+path_arn = "C:\Users\axel_\Documents\MATLAB\windpower-baseload-project\data\gre_arn_18-23.grib";
+path_ezi = "C:\Users\axel_\Documents\MATLAB\windpower-baseload-project\data\tur_ezi_18-23.grib";
+
 
 %Read data and windspeeds
-Wind_Speed_spa = ReadWindData(path_spa);
+Wind_Speed_gri = ReadWindData(path_gri);
 Wind_Speed_gre = ReadWindData(path_cre);
 Wind_Speed_adr = ReadWindData(path_adr);
-
-
+Wind_Speed_arn = ReadWindData(path_arn);
+Wind_Speed_ezi = ReadWindData(path_ezi);
 
 %% SUPPLY POWER CALCULATIONS
 
@@ -22,9 +25,11 @@ Cut_Out = 25;
 
 %power calc
 Sum = true;
-power_vec = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,Wind_Speed_spa,Sum);
+power_vec = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,Wind_Speed_gri,Sum);
 power_vec2 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,Wind_Speed_gre,Sum);
 power_vec3 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,Wind_Speed_adr,Sum);
+power_vec4 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,Wind_Speed_arn,Sum);
+power_vec5 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,Wind_Speed_ezi,Sum);
 
 %% BASELOAD CALCULATION
 
@@ -48,7 +53,8 @@ loc_storage_cap = 50;
 loc_storage_low = 10;
 base_load_tol_constant = 0.9;   %tolerance too store in local
 
-d1 = ones(1,t)*6; 
+t = length(power_vec);
+d1 = ones(1,t)*11; 
 d2 = ones(1,t)*2;
 d3 = ones(1,t)*2; 
 base_power_demand = [d1;d2;d3];
@@ -61,9 +67,9 @@ local_storage_efficiency = 0.8;
 big_storage_efficiency = 0.9;
 
 %% RUN MODEL
-t = length(power_vec3);
-power_matrix = [power_vec(1:t); power_vec2(1:t); power_vec3];
-region = ["1","1","1"];
+
+power_matrix = [power_vec; power_vec2; power_vec3; power_vec4; power_vec5];
+region = ["1","1","1","1","1"];
 
  [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment] = master_model(power_matrix, region, ...
     cable_power_cap, base_power_demand, loc_storage_cap, loc_storage_low, base_load_tol_constant, ...
@@ -80,3 +86,16 @@ figure(6)
 plot(X,power_out_matrix(3,:))
 figure(7)
 plot(X,big_storage_vec)
+
+%%
+correlation_matrix = corrcoef(power_vec,power_vec3);    
+correlation_coefficient = correlation_matrix(1, 2);
+
+% Display the result
+fprintf('Correlation Coefficient: %.2f\n', correlation_coefficient);
+
+scatter(power_vec, power_vec2);
+xlabel('Wind power at Site 1');
+ylabel('Wind power at Site 2');
+title('Correlation Between Wind Data Sets');
+grid on;
