@@ -47,4 +47,19 @@ SouthIndex = ceil((RegionNorthB-SouthBound)*LatitudeRes + 1);
 WindSpeeds = WindData(NorthIndex:SouthIndex, WestIndex:EastIndex, :);
 
 % Then find the area of the park, will vary depending on latitude
-ParkArea = 111*(NorthBound-SouthBound)*6371*cos((0.0174533*NorthBound+SouthBound)/2)*0.0174533*(EastBound-WestBound); % in km^2
+% Convert boundaries to radians
+NorthBoundRad = deg2rad(NorthBound);
+SouthBoundRad = deg2rad(SouthBound);
+EastBoundRad = deg2rad(EastBound);
+WestBoundRad = deg2rad(WestBound);
+
+% Calculate average latitude in radians
+avgLatitudeRad = (NorthBoundRad + SouthBoundRad) / 2;
+
+% Earth radius in km
+EarthRadius = 6371;
+
+% Calculate area
+latDiff = NorthBoundRad - SouthBoundRad;  % Latitude range in radians
+longDiff = EastBoundRad - WestBoundRad;   % Longitude range in radians
+ParkArea = EarthRadius^2 * abs(latDiff * longDiff * cos(avgLatitudeRad)); % Area in km^2
