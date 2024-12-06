@@ -35,12 +35,13 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment] = mas
 
     % Adjust the minpowerout to the same size as the parr power matrix
     min_power_out = expand_demand_matrix(base_power_demand,n,T,region);
-    
+
+    v = zeros(n,T);
     % Loop over each timestep
     for t = 2:T
         % Distriute the demand over all parks in the same region
         distributed_min_power_out = distribute_demand_by_parks(min_power_out(:,t),region);
-
+        v(:,t) = distributed_min_power_out;
         % Calculate power balance for each park
         power_diff_vec = power_matrix(:, t) - distributed_min_power_out;
 
@@ -163,11 +164,10 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment] = mas
             
         end
     end
-    
+
     % Compute the curtailment
     tot_loss = sum(energy_loss,"all");
     tot_power = sum(power_matrix,"all");
     curtailment = tot_loss/tot_power*100;
-    
     toc;
 end

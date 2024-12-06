@@ -85,4 +85,5 @@ function BaseLoadMatrix = Baseload(years, Regions, CSV_file)
         BaseLoadMatrix = [BaseLoadMatrix, array];
     end
 
+    BaseLoadMatrix = BaseLoadMatrix./10^3;
 
