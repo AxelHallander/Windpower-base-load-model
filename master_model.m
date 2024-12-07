@@ -1,5 +1,5 @@
-function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment] = master_model(power_matrix, region, ...
-         cable_power_cap, base_power_demand, loc_storage_cap, loc_storage_low, base_load_tol_constant, ...
+function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,power_loss_ratio] = master_model(power_matrix, region, ...
+         cable_power_cap, power_cap, base_power_demand, loc_storage_cap, loc_storage_low, base_load_tol_constant, ...
          regional_efficiency, across_regions_efficiency, local_storage_efficiency, big_storage_efficiency)
 % This functions calculates local storage vectors and power out vectors for each wind park in the system as well 
 % as the shared regional storage vector and total curtailment of the system. The input is a power matrix where each
@@ -28,7 +28,9 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment] = mas
     loc_storage_matrix = zeros(n,T);
     power_out_matrix = zeros(n,T);
     big_storage_vec = zeros(1,T);
+    big_storage_vec(1) = 2000; %some start resorvior storage
     energy_loss = zeros(1,T);
+    power_loss = zeros(1,T);
  
     % Differentiate unique regions
     regions = unique(region);
@@ -36,12 +38,11 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment] = mas
     % Adjust the minpowerout to the same size as the parr power matrix
     min_power_out = expand_demand_matrix(base_power_demand,n,T,region);
 
-    v = zeros(n,T);
     % Loop over each timestep
     for t = 2:T
         % Distriute the demand over all parks in the same region
         distributed_min_power_out = distribute_demand_by_parks(min_power_out(:,t),region);
-        v(:,t) = distributed_min_power_out;
+
         % Calculate power balance for each park
         power_diff_vec = power_matrix(:, t) - distributed_min_power_out;
 
@@ -110,7 +111,17 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment] = mas
             % Update remaining surplus
             tot_Remaining_Surplus = sum(deficit_parks) + tot_Remaining_Surplus;
             
+            % Charge big storage vector
             if tot_Remaining_Surplus > 0           %if tot balace > 0
+                
+                % Charge for maximum power 
+                if tot_Remaining_Surplus > power_cap
+                    % Saves the cap loss
+                    power_loss(t) = tot_Remaining_Surplus - power_cap;
+                    tot_Remaining_Surplus = power_cap;
+                end
+                
+                % Update storage
                 big_storage_vec(t) = big_storage_vec(t-1) + tot_Remaining_Surplus*big_storage_efficiency;
             end
         end
@@ -136,12 +147,40 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment] = mas
         % Update local storage
         loc_storage_matrix(:,t) = currentStorage;
     
-        % Update big storage for the amount the locals cannot handle
-        big_storage_vec(t) = big_storage_vec(t) + energy_left;
-    
         % Set power to min as the storages handels the power
         power_out_matrix(:,t) = distributed_min_power_out;
-        
+
+        % Update big storage for the amount the locals cannot handle and Check power cap
+        if energy_left > power_cap
+
+            % Calculate power loss and set big storage power to cap
+            power_loss(t) = energy_left - power_cap;
+            energy_left = power_cap;
+            
+            % Find deficit park indicies.
+            def_index = deficit_parks < 0;
+
+            % Remove the power loss from the power out for deficit parks 
+            power_out_matrix(def_index,t) = power_out_matrix(def_index,t) + power_loss(t)/sum(def_index);
+        end
+
+        % Update storage vector
+        big_storage_vec(t) = big_storage_vec(t) + energy_left;
+
+        % If the storage gets emptied, lower power out for deficit parks
+        if big_storage_vec(t) < 0
+            
+            %calculate deficit power and set storage to zero
+            deficit_power = big_storage_vec(t);
+            big_storage_vec(t) = 0;
+
+            % Find deficit park indicies.
+            def_index = deficit_parks < 0;
+
+            % Remove power from deficit parks corresponding to the deficit
+            power_out_matrix(def_index,t) =  power_out_matrix(def_index,t) + deficit_power/sum(def_index);
+        end
+
         % Remove power from the parks below the storage limit
         if  ~(low_storage_indicies == false)  
             
@@ -165,9 +204,11 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment] = mas
         end
     end
 
-    % Compute the curtailment
+    % Compute the curtailment and power cap loss
     tot_loss = sum(energy_loss,"all");
     tot_power = sum(power_matrix,"all");
+    tot_power_loss = sum(power_loss,"all");
+    power_loss_ratio = tot_power_loss/tot_power*100;
     curtailment = tot_loss/tot_power*100;
     toc;
 end
