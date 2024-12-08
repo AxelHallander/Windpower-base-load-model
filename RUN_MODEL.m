@@ -7,16 +7,22 @@ path_atl = "C:\Users\axel_\Documents\MATLAB\windpower-baseload-project\data\Atla
 path_sca = "C:\Users\axel_\Documents\MATLAB\windpower-baseload-project\data\Scandinavia_18-23.grib";
 
 [Wind_Speed_med, geoinfo_med] = ReadWindData(path_med);
-[Wind_Speed_atl, geoinfo_atl] = ReadWindData(path_med);
-[Wind_Speed_sca, geoinfo_sca] = ReadWindData(path_med);
+[Wind_Speed_atl, geoinfo_atl] = ReadWindData(path_atl);
+[Wind_Speed_sca, geoinfo_sca] = ReadWindData(path_sca);
 
-%% READ IN EACH PARK
-[wind1,area1] = ParkWindSpeeds([ 3.35,  3.65, 42.40, 42.24],Wind_Speed_med,geoinfo_med);     %spain, girone
-[wind2,area2] = ParkWindSpeeds([26.35, 26.65, 35.25, 35.08],Wind_Speed_med,geoinfo_med);     %greece, crete
-[wind3,area3] = ParkWindSpeeds([-2.99, -2.75, 36.50, 36.50],Wind_Speed_med,geoinfo_med);     %spain, adra (-3.05- -2.8: 36.6-36.4)
-[wind4,area4] = ParkWindSpeeds([25.50, 25.75, 39.75, 39.50],Wind_Speed_med,geoinfo_med);     %turkey, ezine
-[wind5,area5] = ParkWindSpeeds([24.50, 24.75, 37.80, 37.70],Wind_Speed_med,geoinfo_med);     %greece, arni
-[wind6,area6] = ParkWindSpeeds([25.50, 25.65, 40.30, 40.15],Wind_Speed_med,geoinfo_med);     %greece, sam
+%% READ IN EACH PARK region meditarian
+[wind_med1,area_med1] = ParkWindSpeeds([ 3.35,  3.65, 42.40, 42.24],Wind_Speed_med,geoinfo_med);     %spain, girone
+[wind_med2,area_med2] = ParkWindSpeeds([26.35, 26.65, 35.25, 35.08],Wind_Speed_med,geoinfo_med);     %greece, crete
+[wind_med3,area_med3] = ParkWindSpeeds([-2.99, -2.75, 36.50, 36.50],Wind_Speed_med,geoinfo_med);     %spain, adra (-3.05- -2.8: 36.6-36.4)
+[wind_med4,area_med4] = ParkWindSpeeds([25.50, 25.75, 39.75, 39.50],Wind_Speed_med,geoinfo_med);     %turkey, ezine
+[wind_med5,area_med5] = ParkWindSpeeds([24.50, 24.75, 37.80, 37.70],Wind_Speed_med,geoinfo_med);     %greece, arni
+[wind_med6,area_med6] = ParkWindSpeeds([25.50, 25.65, 40.30, 40.15],Wind_Speed_med,geoinfo_med);     %greece, sam
+
+%% atlantic
+[wind_atl1,area_atl1] = ParkWindSpeeds([-8.65,-8.27 , 43.85, 43.70],Wind_Speed_atl,geoinfo_atl);            
+[wind_atl2,area_atl2] = ParkWindSpeeds([-11.0,-10.60, 51.60, 51.40],Wind_Speed_atl,geoinfo_atl);
+[wind_atl3,area_atl3] = ParkWindSpeeds([-7.35,-7.0  , 56.84, 56.70],Wind_Speed_atl,geoinfo_atl);
+[wind_atl4,area_atl4] = ParkWindSpeeds([-3.83,-3.50 , 59.50, 59.30],Wind_Speed_atl,geoinfo_atl);
 
 %% SUPPLY POWER CALCULATIONS
 
@@ -28,12 +34,17 @@ Cut_Out = 25;
 
 %power calc
 Sum = true;
-power_vec1 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind1,Sum);
-power_vec2 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind2,Sum);
-power_vec3 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind3,Sum);
-power_vec4 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind4,Sum);
-power_vec5 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind5,Sum);
-power_vec6 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind6,Sum);
+power_vec_med1 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_med1,Sum);
+power_vec_med2 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_med2,Sum);
+power_vec_med3 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_med3,Sum);
+power_vec_med4 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_med4,Sum);
+power_vec_med5 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_med5,Sum);
+power_vec_med6 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_med6,Sum);
+
+power_vec_atl1 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_atl1,Sum);
+power_vec_atl2 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_atl2,Sum);
+power_vec_atl3 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_atl3,Sum);
+power_vec_atl4 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_atl4,Sum);
 
 %% DEMAND POWER CALCULATION
 
@@ -78,8 +89,9 @@ power_demand_matrix_adjusted = power_demand_matrix*baseload_percentage;
 
 %% RUN MODEL
 
-power_matrix = [power_vec1; power_vec2; power_vec3; power_vec4; power_vec5; power_vec6];
-region = ["1","1","1","1","1","1"];
+power_matrix = [power_vec_med1; power_vec_med2; power_vec_med3; power_vec_med4; power_vec_med5; power_vec_med6;
+                power_vec_atl1; power_vec_atl2; power_vec_atl3; power_vec_atl4];
+region = ["1","1","1","1","1","1","2","2","2","2"];
 
  [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,power_cap_loss] = master_model(power_matrix, region, ...
     cable_power_cap, power_cap, power_demand_matrix_adjusted, loc_storage_cap, loc_storage_low, base_load_tol_constant, ...
@@ -100,7 +112,7 @@ ylabel('Energy (GWh)')
 figure(3)
 hold on
 plot(X,power_out_matrix(1,:))
-plot(X,power_out_matrix(5,:))
+plot(X,power_out_matrix(7,:))
 title('Power supply out')
 xlabel('Time (h)')
 ylabel('Power (GW)')
@@ -122,13 +134,13 @@ ylabel('Power (GW)')
 legend('Supply','Demand')
 
 %%
-correlation_matrix = corrcoef(power_vec1,power_vec3);    
+correlation_matrix = corrcoef(power_vec_med1,power_vec3);    
 correlation_coefficient = correlation_matrix(1, 2);
 
 % Display the result
 fprintf('Correlation Coefficient: %.2f\n', correlation_coefficient);
 
-scatter(power_vec1, power_vec2);
+scatter(power_vec_med1, power_vec2);
 xlabel('Wind power at Site 1');
 ylabel('Wind power at Site 2');
 title('Correlation Between Wind Data Sets');
