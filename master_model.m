@@ -31,7 +31,11 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,power_
     big_storage_vec(1) = 2000; %some start resorvior storage
     energy_loss = zeros(1,T);
     power_loss = zeros(1,T);
- 
+
+    % Calculate rated power an local storage values for parks
+    park_rated_powers = Rated_Power*area_vector;
+    local_storage_caps = loc_storage_cap*park_rated_powers;
+
     % Differentiate unique regions
     regions = unique(region);
 
@@ -84,7 +88,7 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,power_
             surplus_parks(parks_beyond) = surplus_parks(parks_beyond) - surplus_beyond(parks_beyond);  
     
             % Apply local storage cap and save the enrgy loss
-            [loc_storage_matrix(:,t), energy_loss(t)] = cap_storage(loc_storage_matrix(:,t), loc_storage_cap);
+            [loc_storage_matrix(:,t), energy_loss(t)] = cap_storage(loc_storage_matrix(:,t), local_storage_caps);
         end
         
     

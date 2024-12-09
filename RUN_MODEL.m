@@ -78,9 +78,9 @@ plot(X,power_demand_matrix)
 
 % Load max and min, all are in GIGA
 cable_power_cap = 4;                           
-loc_storage_cap = 50;      
-loc_storage_low = 10;
-power_cap = 10;
+loc_storage_cap = 10; % times the park rated power     
+loc_storage_low = 0.2; % percentage of total cap
+power_cap = 0.2; % percentage of total cap
 base_load_tol_constant = 0.9;   %tolerance too store in local
 
 % Efficiency for storage and transmission
@@ -99,13 +99,13 @@ power_demand_matrix_adjusted = power_demand_matrix*baseload_percentage;
 
 power_matrix = [power_vec_med1; power_vec_med2; power_vec_med3; power_vec_med4; power_vec_med5; power_vec_med6;
                 power_vec_atl1; power_vec_atl2; power_vec_atl3; power_vec_atl4];
-area_vector = [area_med1, area_med2, area_med3, area_med4, area_med5, ...
+park_areas = [area_med1, area_med2, area_med3, area_med4, area_med5, ...
                area_med6, area_atl1, area_atl2, area_atl3, area_atl4];
 region = ["1","1","1","1","1","1","2","2","2","2"];
 
  [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,power_cap_loss] = master_model(power_matrix, region, ...
     cable_power_cap, power_cap, power_demand_matrix_adjusted, loc_storage_cap, loc_storage_low, base_load_tol_constant, ...
-    regional_efficiency, across_regions_efficiency, local_storage_efficiency, big_storage_efficiency, area_vector);
+    regional_efficiency, across_regions_efficiency, local_storage_efficiency, big_storage_efficiency, park_areas);
  
  disp(['Curtailment: ', num2str(round(curtailment,2)),'%']);
  disp(['Power cap loss: ', num2str(round(power_cap_loss,2)),'%']);
