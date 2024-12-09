@@ -72,7 +72,9 @@ plot(X,power_demand_matrix)
 cable_power_cap = 4;                           
 loc_storage_cap = 50;      
 loc_storage_low = 10;
-power_cap = 10;
+
+loc_power_cap = 1;
+reg_power_cap = 10;
 base_load_tol_constant = 0.9;   %tolerance too store in local
 
 % Efficiency for storage and transmission
@@ -93,12 +95,14 @@ power_matrix = [power_vec_med1; power_vec_med2; power_vec_med3; power_vec_med4; 
                 power_vec_atl1; power_vec_atl2; power_vec_atl3; power_vec_atl4];
 region = ["1","1","1","1","1","1","2","2","2","2"];
 
- [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,power_cap_loss] = master_model(power_matrix, region, ...
-    cable_power_cap, power_cap, power_demand_matrix_adjusted, loc_storage_cap, loc_storage_low, base_load_tol_constant, ...
+ [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_power_cap_loss,loc_power_cap_loss,tot_effiency] = master_model(power_matrix, region, ...
+    cable_power_cap, loc_power_cap, reg_power_cap, power_demand_matrix_adjusted, loc_storage_cap, loc_storage_low, base_load_tol_constant, ...
     regional_efficiency, across_regions_efficiency, local_storage_efficiency, big_storage_efficiency);
  
- disp(['Curtailment: ', num2str(round(curtailment,2)),'%']);
- disp(['Power cap loss: ', num2str(round(power_cap_loss,2)),'%']);
+ disp(['Total system efficency:  ', num2str(round(tot_effiency,2)),'%']);
+ disp(['Curtailment:             ', num2str(round(curtailment,2)),'%']);
+ disp(['Regional Power cap loss: ', num2str(round(reg_power_cap_loss,2)),'%']);
+ disp(['Local Power cap loss:    ', num2str(round(loc_power_cap_loss,2)),'%']);
 
 %% PLOT RESULTS
 X = 1:length(big_storage_vec);
