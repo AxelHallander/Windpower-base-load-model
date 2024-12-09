@@ -8,7 +8,7 @@ path_sca = "C:\Users\axel_\Documents\MATLAB\windpower-baseload-project\data\Scan
 
 %% READ BIG WIND DATA FOR EACH REGION (Vilgot)
 
-path_med = "C:\Users\vilgo\OneDrive\Desktop\Projekt WindBaseload\BIG data\Meditarian_18-23.grib";
+path_med = "C:\Users\vilgo\OneDrive\Desktop\Projekt WindBaseload\BIG data\Mediterranean_18-23.grib";
 path_atl = "C:\Users\vilgo\OneDrive\Desktop\Projekt WindBaseload\BIG data\Atlantic_18-23.grib";
 path_sca = "C:\Users\vilgo\OneDrive\Desktop\Projekt WindBaseload\BIG data\Scandinavia_18-23.grib";
 %%
@@ -33,24 +33,25 @@ path_sca = "C:\Users\vilgo\OneDrive\Desktop\Projekt WindBaseload\BIG data\Scandi
 %% SUPPLY POWER CALCULATIONS
 
 %Park and turbine characteristics
-Rated_Power = 5; %*10^9; 
+Rated_Power = 0.0125; %*10^9, per km^2; 
 Rated_Wind = 11;
 Cut_In = 3;
 Cut_Out = 25;
 
+
 %power calc
 Sum = true;
-power_vec_med1 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_med1,Sum);
-power_vec_med2 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_med2,Sum);
-power_vec_med3 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_med3,Sum);
-power_vec_med4 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_med4,Sum);
-power_vec_med5 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_med5,Sum);
-power_vec_med6 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_med6,Sum);
+power_vec_med1 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*area_med1,wind_med1,Sum);
+power_vec_med2 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*area_med2,wind_med2,Sum);
+power_vec_med3 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*area_med3,wind_med3,Sum);
+power_vec_med4 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*area_med4,wind_med4,Sum);
+power_vec_med5 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*area_med5,wind_med5,Sum);
+power_vec_med6 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*area_med6,wind_med6,Sum);
 
-power_vec_atl1 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_atl1,Sum);
-power_vec_atl2 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_atl2,Sum);
-power_vec_atl3 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_atl3,Sum);
-power_vec_atl4 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_atl4,Sum);
+power_vec_atl1 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*area_atl1,wind_atl1,Sum);
+power_vec_atl2 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*area_atl2,wind_atl2,Sum);
+power_vec_atl3 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*area_atl3,wind_atl3,Sum);
+power_vec_atl4 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*area_atl4,wind_atl4,Sum);
 
 %% DEMAND POWER CALCULATION
 
@@ -98,11 +99,13 @@ power_demand_matrix_adjusted = power_demand_matrix*baseload_percentage;
 
 power_matrix = [power_vec_med1; power_vec_med2; power_vec_med3; power_vec_med4; power_vec_med5; power_vec_med6;
                 power_vec_atl1; power_vec_atl2; power_vec_atl3; power_vec_atl4];
+area_vector = [area_med1, area_med2, area_med3, area_med4, area_med5, ...
+               area_med6, area_atl1, area_atl2, area_atl3, area_atl4];
 region = ["1","1","1","1","1","1","2","2","2","2"];
 
  [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,power_cap_loss] = master_model(power_matrix, region, ...
     cable_power_cap, power_cap, power_demand_matrix_adjusted, loc_storage_cap, loc_storage_low, base_load_tol_constant, ...
-    regional_efficiency, across_regions_efficiency, local_storage_efficiency, big_storage_efficiency);
+    regional_efficiency, across_regions_efficiency, local_storage_efficiency, big_storage_efficiency, area_vector);
  
  disp(['Curtailment: ', num2str(round(curtailment,2)),'%']);
  disp(['Power cap loss: ', num2str(round(power_cap_loss,2)),'%']);

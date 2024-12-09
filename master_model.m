@@ -1,6 +1,6 @@
 function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,power_loss_ratio] = master_model(power_matrix, region, ...
          cable_power_cap, power_cap, base_power_demand, loc_storage_cap, loc_storage_low, base_load_tol_constant, ...
-         regional_efficiency, across_regions_efficiency, local_storage_efficiency, big_storage_efficiency)
+         regional_efficiency, across_regions_efficiency, local_storage_efficiency, big_storage_efficiency, area_vector)
 % This functions calculates local storage vectors and power out vectors for each wind park in the system as well 
 % as the shared regional storage vector and total curtailment of the system. The input is a power matrix where each
 % column represent one park, a corresponding region array telling which region the parks belong to in order 
@@ -41,7 +41,7 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,power_
     % Loop over each timestep
     for t = 2:T
         % Distriute the demand over all parks in the same region
-        distributed_min_power_out = distribute_demand_by_parks(min_power_out(:,t),region);
+        distributed_min_power_out = distribute_demand_by_parks(min_power_out(:,t),region, area_vector);
 
         % Calculate power balance for each park
         power_diff_vec = power_matrix(:, t) - distributed_min_power_out;

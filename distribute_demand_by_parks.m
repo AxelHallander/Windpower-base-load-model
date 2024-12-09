@@ -1,4 +1,4 @@
-function adjusted_output = distribute_demand_by_parks(min_power_out, region)
+function adjusted_output = distribute_demand_by_parks(min_power_out, region, area_vector)
     % Number of parks and time steps
     [n, T] = size(min_power_out);
     
@@ -15,10 +15,14 @@ function adjusted_output = distribute_demand_by_parks(min_power_out, region)
         % Find indices of parks in this region
         region_indices = find(region == current_region);
         
-        % Number of parks in this region
-        num_parks_in_region = numel(region_indices);
+        % Find the total park area for the region
+        Regional_Park_Area = sum(area_vector(region_indices));
         
         % Adjust the power for each park in this region
-        adjusted_output(region_indices, :) = min_power_out(region_indices, :) / num_parks_in_region;
+        for j = 1:length(region_indices)
+            current_park = region_indices(j);
+            adjusted_output(current_park, :) = min_power_out(current_park) ...
+            * area_vector(current_park)/Regional_Park_Area;
+        end
     end
 end
