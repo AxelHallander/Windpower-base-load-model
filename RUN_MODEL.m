@@ -1,11 +1,17 @@
 %% APPLYING MODEL
 
-%% READ BIG WIND DATA FOR EACH REGION
+%% READ BIG WIND DATA FOR EACH REGION (Axel)
 
 path_med = "C:\Users\axel_\Documents\MATLAB\windpower-baseload-project\data\Meditarian_18-23.grib";
 path_atl = "C:\Users\axel_\Documents\MATLAB\windpower-baseload-project\data\Atlantic_18-23.grib";
 path_sca = "C:\Users\axel_\Documents\MATLAB\windpower-baseload-project\data\Scandinavia_18-23.grib";
 
+%% READ BIG WIND DATA FOR EACH REGION (Vilgot)
+
+path_med = "C:\Users\vilgo\OneDrive\Desktop\Projekt WindBaseload\BIG data\Meditarian_18-23.grib";
+path_atl = "C:\Users\vilgo\OneDrive\Desktop\Projekt WindBaseload\BIG data\Atlantic_18-23.grib";
+path_sca = "C:\Users\vilgo\OneDrive\Desktop\Projekt WindBaseload\BIG data\Scandinavia_18-23.grib";
+%%
 [Wind_Speed_med, geoinfo_med] = ReadWindData(path_med);
 [Wind_Speed_atl, geoinfo_atl] = ReadWindData(path_atl);
 [Wind_Speed_sca, geoinfo_sca] = ReadWindData(path_sca);
@@ -13,7 +19,7 @@ path_sca = "C:\Users\axel_\Documents\MATLAB\windpower-baseload-project\data\Scan
 %% READ IN EACH PARK region meditarian
 [wind_med1,area_med1] = ParkWindSpeeds([ 3.35,  3.65, 42.40, 42.24],Wind_Speed_med,geoinfo_med);     %spain, girone
 [wind_med2,area_med2] = ParkWindSpeeds([26.35, 26.65, 35.25, 35.08],Wind_Speed_med,geoinfo_med);     %greece, crete
-[wind_med3,area_med3] = ParkWindSpeeds([-2.99, -2.75, 36.50, 36.50],Wind_Speed_med,geoinfo_med);     %spain, adra (-3.05- -2.8: 36.6-36.4)
+[wind_med3,area_med3] = ParkWindSpeeds([-2.99, -2.75, 36.60, 36.40],Wind_Speed_med,geoinfo_med);     %spain, adra (-3.05- -2.8: 36.6-36.4)
 [wind_med4,area_med4] = ParkWindSpeeds([25.50, 25.75, 39.75, 39.50],Wind_Speed_med,geoinfo_med);     %turkey, ezine
 [wind_med5,area_med5] = ParkWindSpeeds([24.50, 24.75, 37.80, 37.70],Wind_Speed_med,geoinfo_med);     %greece, arni
 [wind_med6,area_med6] = ParkWindSpeeds([25.50, 25.65, 40.30, 40.15],Wind_Speed_med,geoinfo_med);     %greece, sam
@@ -48,18 +54,19 @@ power_vec_atl4 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_a
 
 %% DEMAND POWER CALCULATION
 
-% Define what countries are 
+% Define what countries are part of each region
 Regions = containers.Map();
 Regions('1') = {'SE', 'FI', 'EE', 'LV', 'LT', 'DK', 'DE', 'PL'};
 Regions('2') = {'NL', 'BE', 'LU', 'FR', 'IE', 'ES', 'PT'};
-Regions('3') = {'AT', 'SI', 'HR', 'HU', 'RS', 'BA', 'ME', 'XK', 'AL', 'GR', 'MK', 'BG', 'MD', 'RO', 'SK', 'CZ', 'IT', 'CH'};
+Regions('3') = {'AT', 'SI', 'HR', 'HU', 'RS', 'BA', 'ME', 'XK', ... 
+    'AL', 'GR', 'MK', 'BG', 'MD', 'RO', 'SK', 'CZ', 'IT', 'CH'};
 
 % Find where the electric load CSV is located
 ElectricLoads_Vilgot = "C:\Users\vilgo\OneDrive\Desktop\Projekt WindBaseload\BIG data\monthly_hourly_load_values_2023.csv";
 ElectricLoads_Axel = "C:\Users\axel_\Documents\MATLAB\windpower-baseload-project\data\monthly_hourly_load_values_2023.csv";
 
 % Run Baseload function
-power_demand_matrix = Baseload([2018,2023], Regions, ElectricLoads_Axel);
+power_demand_matrix = Baseload([2018,2023], Regions, ElectricLoads_Vilgot);
 power_demand_matrix = power_demand_matrix';
 
 %%
