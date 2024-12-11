@@ -78,8 +78,8 @@ plot(X,power_demand_matrix)
 
 % Load max and min, all are in GIGA
 cable_power_cap = 4;                           
-loc_storage_cap = 50;      
-loc_storage_low = 10;
+loc_storage_cap = 10; % times the rated power      
+loc_storage_low = 0.2; % portion of the full storage
 
 loc_power_cap = 1;
 reg_power_cap = 10;
@@ -107,7 +107,7 @@ region = ["1","1","1","1","1","1","2","2","2","2"];
 
  [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_power_cap_loss,loc_power_cap_loss,tot_effiency] = master_model(power_matrix, region, ...
     cable_power_cap, loc_power_cap, reg_power_cap, power_demand_matrix_adjusted, loc_storage_cap, loc_storage_low, base_load_tol_constant, ...
-    regional_efficiency, across_regions_efficiency, local_storage_efficiency, big_storage_efficiency);
+    regional_efficiency, across_regions_efficiency, local_storage_efficiency, big_storage_efficiency, park_areas, Rated_Power);
  
  disp(['Total system efficency:  ', num2str(round(tot_effiency,2)),'%']);
  disp(['Curtailment:             ', num2str(round(curtailment,2)),'%']);
