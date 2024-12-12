@@ -38,20 +38,22 @@ Rated_Wind = 11;
 Cut_In = 3;
 Cut_Out = 25;
 
+park_areas = [area_med1, area_med2, area_med3, area_med4, area_med5, ...
+               area_med6, area_atl1, area_atl2, area_atl3, area_atl4];
 
 %power calc
 Sum = true;
-power_vec_med1 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*area_med1,wind_med1,Sum);
-power_vec_med2 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*area_med2,wind_med2,Sum);
-power_vec_med3 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*area_med3,wind_med3,Sum);
-power_vec_med4 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*area_med4,wind_med4,Sum);
-power_vec_med5 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*area_med5,wind_med5,Sum);
-power_vec_med6 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*area_med6,wind_med6,Sum);
+power_vec_med1 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(1),wind_med1,Sum);
+power_vec_med2 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(2),wind_med2,Sum);
+power_vec_med3 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(3),wind_med3,Sum);
+power_vec_med4 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(4),wind_med4,Sum);
+power_vec_med5 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(5),wind_med5,Sum);
+power_vec_med6 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(6),wind_med6,Sum);
 
-power_vec_atl1 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*area_atl1,wind_atl1,Sum);
-power_vec_atl2 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*area_atl2,wind_atl2,Sum);
-power_vec_atl3 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*area_atl3,wind_atl3,Sum);
-power_vec_atl4 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*area_atl4,wind_atl4,Sum);
+power_vec_atl1 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(7),wind_atl1,Sum);
+power_vec_atl2 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(8),wind_atl2,Sum);
+power_vec_atl3 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(9),wind_atl3,Sum);
+power_vec_atl4 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(10),wind_atl4,Sum);
 
 %% DEMAND POWER CALCULATION
 
@@ -77,19 +79,20 @@ plot(X,power_demand_matrix)
 %% DEFINED PARAMETERS
 
 % Load max and min, all are in GIGA
-cable_power_cap = 4;                           
+Rated_Power_area = 0.0125;
+cable_power_cap = 0.8; % portion of rated power                        
 loc_storage_cap = 10; % times the rated power      
 loc_storage_low = 0.2; % portion of the full storage
 
-loc_power_cap = 1;
+loc_power_cap = 0.02; % portion of local storage capacity
 reg_power_cap = 10;
 base_load_tol_constant = 0.9;   %tolerance too store in local
 
 % Efficiency for storage and transmission
 regional_efficiency = 0.99;
 across_regions_efficiency = 0.95;
-local_storage_efficiency = 0.8;
-big_storage_efficiency = 0.9;
+local_storage_efficiency = 0.7;
+big_storage_efficiency = 0.8;
 
 % Adjust demand
 baseloadsum = mean(power_demand_matrix,"all");
@@ -101,13 +104,13 @@ power_demand_matrix_adjusted = power_demand_matrix*baseload_percentage;
 
 power_matrix = [power_vec_med1; power_vec_med2; power_vec_med3; power_vec_med4; power_vec_med5; power_vec_med6;
                 power_vec_atl1; power_vec_atl2; power_vec_atl3; power_vec_atl4];
-park_areas = [area_med1, area_med2, area_med3, area_med4, area_med5, ...
-               area_med6, area_atl1, area_atl2, area_atl3, area_atl4];
+
+test_areas = repelem(400,10);
 region = ["1","1","1","1","1","1","2","2","2","2"];
 
- [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_power_cap_loss,loc_power_cap_loss,tot_effiency] = master_model(power_matrix, region, ...
+ [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_power_cap_loss,loc_power_cap_loss,tot_effiency, loc_power_loss] = master_model(power_matrix, region, ...
     cable_power_cap, loc_power_cap, reg_power_cap, power_demand_matrix_adjusted, loc_storage_cap, loc_storage_low, base_load_tol_constant, ...
-    regional_efficiency, across_regions_efficiency, local_storage_efficiency, big_storage_efficiency, park_areas, Rated_Power);
+    regional_efficiency, across_regions_efficiency, local_storage_efficiency, big_storage_efficiency, park_areas, Rated_Power_area);
  
  disp(['Total system efficency:  ', num2str(round(tot_effiency,2)),'%']);
  disp(['Curtailment:             ', num2str(round(curtailment,2)),'%']);
@@ -143,6 +146,14 @@ hold on
 plot(X,sum(power_out_matrix))
 plot(X,sum(power_demand_matrix))
 title('Total power supply vs demand')
+xlabel('Time (h)')
+ylabel('Power (GW)')
+legend('Supply','Demand')
+
+figure(6)
+hold on
+plot(X,loc_power_loss)
+title('loc power cap loss')
 xlabel('Time (h)')
 ylabel('Power (GW)')
 legend('Supply','Demand')

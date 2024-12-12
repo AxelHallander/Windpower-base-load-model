@@ -7,6 +7,7 @@ function [loc_storage_matrix,indices_below_limit,loc_power_loss] = local_storage
 
     % Get the indices of parks below the limit within the region
     indices_below_limit = region_Indices(parks_below_limit);
+    
 
     %Loop over the parks indicies below the limit
     for p = indices_below_limit
@@ -15,7 +16,7 @@ function [loc_storage_matrix,indices_below_limit,loc_power_loss] = local_storage
         stored_energy = base_load_tol_diff(r); 
 
         % Apply cap for local storage
-        capped_stored_energy = min(stored_energy, loc_power_cap);
+        capped_stored_energy = min(stored_energy, loc_power_cap(p));
         
         if stored_energy > capped_stored_energy
             % Save loss
