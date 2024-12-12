@@ -33,7 +33,8 @@ function [surplus_parks,deficit_parks,region_excess_power,region_deficit_power,l
             % If any of the parks how low storage, drop power level to store energy
             [loc_storage_matrix,indices_below_limit,loc_power_loss] = local_storage_tol_power(loc_storage_matrix,local_storage_efficiency,loc_power_cap,base_load_tol_diff,region_Indices,parks_below_limit,loc_power_loss,t,r);
         end
-
+        parks_below_limit = loc_storage_matrix(region_Indices, t) < loc_storage_low;
+        
         % Attempt to cover the regional deficit using regional surplus
         if tot_Regional_Surplus >= tot_Regional_Deficit
             
@@ -42,7 +43,7 @@ function [surplus_parks,deficit_parks,region_excess_power,region_deficit_power,l
             
             % Set the deficit parks to zero
             deficit_parks(region_Indices) = 0;
-
+            
             % If this park-region has excess power, store in local storage if parks are below limit
             if any(parks_below_limit)
                 % If any of the parks how low storage, drop power level to store energy

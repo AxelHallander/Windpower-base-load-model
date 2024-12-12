@@ -1,4 +1,4 @@
-function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_power_loss_ratio,loc_power_loss_ratio,tot_effiency] = master_model(power_matrix, region, ...
+function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_power_loss_ratio,loc_power_loss_ratio,tot_effiency,storage_and_tansmission_losses,loc_power_loss] = master_model(power_matrix, region, ...
          cable_power_cap, loc_power_cap, reg_power_cap, base_power_demand, loc_storage_cap, loc_storage_low, base_load_tol_constant, ...
          regional_efficiency, across_regions_efficiency, local_storage_efficiency, big_storage_efficiency)
 % This functions calculates local storage vectors and power out vectors for each wind park in the system as well 
@@ -28,7 +28,7 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
     loc_storage_matrix = zeros(n,T);
     power_out_matrix = zeros(n,T);
     big_storage_vec = zeros(1,T);
-    big_storage_vec(1) = 2000; %some start resorvior storage
+    big_storage_vec(1) = 10000; %some start resorvior storage
     curtailment_loss = zeros(1,T);
     reg_power_loss = zeros(1,T);
     loc_power_loss = zeros(1,T);
@@ -38,7 +38,7 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
 
     % Adjust the minpowerout to the same size as the parr power matrix
     min_power_out = expand_demand_matrix(base_power_demand,n,T,region);
-
+    
     % Loop over each timestep
     for t = 2:T
         % Distriute the demand over all parks in the same region
@@ -58,15 +58,12 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
         surplus_parks = max(power_diff_vec, 0);     %if value>0 it gets stored, otherwise it is zero for that index
         deficit_parks = min(power_diff_vec, 0);    % If vulue<0 it gets stored, otherwise it is zero for that index
         
-        balance = sum(deficit_parks)+sum(surplus_parks);
-        % if balance > reg_power_cap
-        %     disp(balance)
-        % end
         % Step 1: handle power beyond caple_power_cap: store in local!
-
+        disp('!!!!!!!!!')
+        
         % Create a logical array for parks exceeding the cable power cap
         parks_beyond = surplus_parks > (cable_power_cap - distributed_min_power_out);
-
+        disp(surplus_parks(parks_beyond))
         % If there are no parks with power beyond caple_power_cap, loc_storage remains the same
         if ~any(parks_beyond)
             loc_storage_matrix(:, t) = loc_storage_matrix(:, t-1); % Storage remains unchanged 
@@ -74,12 +71,9 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
         else 
             % Pre-allocate
             surplus_beyond = zeros(size(surplus_parks));
-            
-            % Get the indices of parks_beyond, Get the regions corresponding to these indices
-            beyond_regions_indices = str2double(region(parks_beyond));
-
+             
             % calulcate the power beyond transmission cable
-            surplus_beyond(parks_beyond) = surplus_parks(parks_beyond) - (cable_power_cap - distributed_min_power_out(beyond_regions_indices));
+            surplus_beyond(parks_beyond) = surplus_parks(parks_beyond) - (cable_power_cap - distributed_min_power_out(parks_beyond));
 
             % Save the uncapped surplus
             uncapped_surplus = surplus_beyond(parks_beyond);
@@ -89,20 +83,24 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
             
             % Save loss
             loc_power_loss(t) = sum(uncapped_surplus - surplus_beyond(parks_beyond));
-
+            
             % Update local storage for the affected parks
             loc_storage_matrix(:, t) = loc_storage_matrix(:, t-1);
-            loc_storage_matrix(parks_beyond, t) = loc_storage_matrix(parks_beyond, t) + surplus_beyond(parks_beyond);
-    
-            % Remove the excess from available distribution for affected parks
-            surplus_parks(parks_beyond) = surplus_parks(parks_beyond) - surplus_beyond(parks_beyond);  
-    
+            loc_storage_matrix(parks_beyond, t) = loc_storage_matrix(parks_beyond, t) + surplus_beyond(parks_beyond)*local_storage_efficiency;
+            
+            % PREVIOUS ERROR: INSTEAD NEXT ROW
+            % Remove the excess from available distribution for affected parks 
+            % surplus_parks(parks_beyond) = surplus_parks(parks_beyond) - surplus_beyond(parks_beyond);  
+            
+            % set the affected surplus parks to the cable power cap, adjusted for diff
+            surplus_parks(parks_beyond) = cable_power_cap - distributed_min_power_out(parks_beyond);
+
             % Apply local storage cap and save the enrgy loss
             [loc_storage_matrix(:,t), curtailment_loss(t)] = cap_storage(loc_storage_matrix(:,t), loc_storage_cap);
 
         end
         
-    
+
         % Step 2: Distribute local exess to parks in the same regions with deficit, prioritzes parks with least storage. Loops for each region.
     
         [surplus_parks,deficit_parks,region_excess_power,region_deficit_power,loc_storage_matrix,low_storage_indicies,loc_power_loss] = prioritized_loc_transmission(surplus_parks,deficit_parks,region,regions,regional_efficiency,local_storage_efficiency,loc_storage_low,loc_storage_matrix,base_load_tol_diff,loc_power_loss,loc_power_cap,t);
@@ -111,7 +109,7 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
         % then distribute this to other regions, If there is still more, move to another region. 
      
         tot_Remaining_Surplus = sum(region_excess_power);
-    
+
         % If there are any power left within regional transmission, handle it between regions
         if tot_Remaining_Surplus > 0
             
@@ -171,47 +169,44 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
                 end
                 
                 % Update storage
-                big_storage_vec(t) = big_storage_vec(t-1) + tot_Remaining_Surplus*big_storage_efficiency;
+                big_storage_vec(t) = big_storage_vec(t) + tot_Remaining_Surplus*big_storage_efficiency;
             end
         end
     
         % Step 4: After possible transmission, this section takes from local
         % storage if it is not empty otherwise from big.
     
-        % Remove deficit energy from storage
-        currentStorage = loc_storage_matrix(:,t) + deficit_parks;
+        % Compute discharge for local storages  
+        discharge = max(deficit_parks,-loc_power_cap);
         
-        % Store the negative values, the ones that has not enough energy
-        energy_left = currentStorage(currentStorage < 0);
-    
-        % Handles if the array is empty
-        if isempty(energy_left)
-            energy_left = 0;
-        end
-        energy_left = sum(energy_left);
+        % Update Currentstorrage after removal of discharge
+        currentStorage = loc_storage_matrix(:,t) + discharge;
         
+        % Determine how much energy left the big storage needs to handle 
+        energy_left = sum(deficit_parks-discharge)+sum(currentStorage(currentStorage < 0));
+
         % Then replace all negative values with zeros, as big storage takes takes the capacity the local cannot
         currentStorage(currentStorage < 0) = 0;
-    
+
         % Update local storage
         loc_storage_matrix(:,t) = currentStorage;
     
         % Set power to min as the storages handels the power
         power_out_matrix(:,t) = distributed_min_power_out;
 
-        % Update big storage for the amount the locals cannot handle and Check power cap
-        if energy_left > reg_power_cap
-
-            % Calculate power loss and set big storage power to cap
-            reg_power_loss(t) = energy_left - reg_power_cap;
-            energy_left = reg_power_cap;
-            
-            % Find deficit park indicies.
-            def_index = deficit_parks < 0;
-
-            % Remove the power loss from the power out for deficit parks 
-            power_out_matrix(def_index,t) = power_out_matrix(def_index,t) + reg_power_loss(t)/sum(def_index);
-        end
+        % % Update big storage for the amount the locals cannot handle and Check power cap
+        % if energy_left > reg_power_cap
+        % 
+        %     % Calculate power loss and set big storage power to cap
+        %     reg_power_loss(t) = energy_left - reg_power_cap;
+        %     energy_left = reg_power_cap;
+        % 
+        %     % Find deficit park indicies.
+        %     def_index = deficit_parks < 0;
+        % 
+        %     % Remove the power loss from the power out for deficit parks 
+        %     power_out_matrix(def_index,t) = power_out_matrix(def_index,t) + reg_power_loss(t)/sum(def_index);
+        % end
 
         % Update storage vector
         big_storage_vec(t) = big_storage_vec(t) + energy_left;
@@ -259,11 +254,13 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
     tot_reg_power_loss = sum(reg_power_loss,"all");
     tot_loc_power_loss = sum(loc_power_loss,"all");
     tot_power_out = sum(power_out_matrix,"all");
-    
 
-    tot_effiency = (sum(loc_storage_matrix(:,T)) + sum(big_storage_vec(T) + tot_power_out))/tot_power*100;
+    tot_effiency = (sum(loc_storage_matrix(:,T)) + big_storage_vec(T) + tot_power_out - big_storage_vec(1))/tot_power*100;
     reg_power_loss_ratio = tot_reg_power_loss/tot_power*100;
     loc_power_loss_ratio = tot_loc_power_loss/tot_power*100;
     curtailment = tot_loss/tot_power*100;
+    storage_and_tansmission_losses = 100 - tot_effiency - reg_power_loss_ratio - loc_power_loss_ratio - curtailment;
     toc;
+
+    disp((sum(power_out_matrix,'all')+sum(loc_storage_matrix(:,T))+big_storage_vec(T)- big_storage_vec(1)+ tot_loss+tot_reg_power_loss)/tot_power)
 end

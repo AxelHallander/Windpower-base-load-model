@@ -20,6 +20,8 @@ function [loc_storage_matrix,region_excess_power] = local_storage_excess_low_lim
 
             %update the excess power
             region_excess_power(r) = region_excess_power(r) - stored_energy;
+        else
+            break
         end   
     end
 end
