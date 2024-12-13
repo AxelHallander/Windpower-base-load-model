@@ -1,5 +1,5 @@
-function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_power_loss_ratio,loc_power_loss_ratio,tot_effiency,storage_and_tansmission_losses,loc_power_loss] = master_model(power_matrix, region, ...
-         cable_power_cap, loc_power_cap, reg_power_cap, base_power_demand, loc_storage_cap, loc_storage_low, base_load_tol_constant, ...
+function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_power_loss_ratio,loc_power_loss_ratio,storage_and_tansmission_losses,tot_effiency,downtime] = master_model(power_matrix, region, ...
+         cable_power_cap, loc_power_cap, reg_power_cap, base_power_demand, loc_storage_capacity, loc_storage_low, base_load_tol_constant, ...
          regional_efficiency, across_regions_efficiency, local_storage_efficiency, big_storage_efficiency)
 % This functions calculates local storage vectors and power out vectors for each wind park in the system as well 
 % as the shared regional storage vector and total curtailment of the system. The input is a power matrix where each
@@ -32,6 +32,7 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
     curtailment_loss = zeros(1,T);
     reg_power_loss = zeros(1,T);
     loc_power_loss = zeros(1,T);
+    downtime = 0;
 
     % Differentiate unique regions
     regions = unique(region);
@@ -59,11 +60,10 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
         deficit_parks = min(power_diff_vec, 0);    % If vulue<0 it gets stored, otherwise it is zero for that index
         
         % Step 1: handle power beyond caple_power_cap: store in local!
-        disp('!!!!!!!!!')
-        
+
         % Create a logical array for parks exceeding the cable power cap
         parks_beyond = surplus_parks > (cable_power_cap - distributed_min_power_out);
-        disp(surplus_parks(parks_beyond))
+
         % If there are no parks with power beyond caple_power_cap, loc_storage remains the same
         if ~any(parks_beyond)
             loc_storage_matrix(:, t) = loc_storage_matrix(:, t-1); % Storage remains unchanged 
@@ -96,7 +96,7 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
             surplus_parks(parks_beyond) = cable_power_cap - distributed_min_power_out(parks_beyond);
 
             % Apply local storage cap and save the enrgy loss
-            [loc_storage_matrix(:,t), curtailment_loss(t)] = cap_storage(loc_storage_matrix(:,t), loc_storage_cap);
+            [loc_storage_matrix(:,t), curtailment_loss(t)] = cap_storage(loc_storage_matrix(:,t), loc_storage_capacity);
 
         end
         
@@ -145,7 +145,7 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
                         % break when over_capacity is below zero and local storage is full
                         if over_capacity <= 0 
                             break;
-                        elseif loc_storage_matrix(idx,t) >= loc_storage_cap
+                        elseif loc_storage_matrix(idx,t) >= loc_storage_capacity
                             break;
                         else
                             % Decide allocation for this park (regional efficencies has already been applied, reverse this)
@@ -159,7 +159,7 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
                     end
                     
                     % Apply cap 
-                    [loc_storage_matrix(:,t),reg_power_loss(t)] = cap_storage(loc_storage_matrix(:,t), loc_storage_cap);
+                    [loc_storage_matrix(:,t),reg_power_loss(t)] = cap_storage(loc_storage_matrix(:,t), loc_storage_capacity);
 
                     % Update remaining over_capacity
                     reg_power_loss(t) = reg_power_loss(t) + over_capacity;
@@ -223,6 +223,7 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
 
             % Remove power from deficit parks corresponding to the deficit
             power_out_matrix(def_index,t) =  power_out_matrix(def_index,t) + deficit_power/sum(def_index);
+            downtime = downtime + 1;
         end
 
         % Remove power from the parks below the storage limit

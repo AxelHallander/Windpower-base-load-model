@@ -98,8 +98,8 @@ plot(X,power_demand_matrix)
 %% DEFINED PARAMETERS
 
 % Load max and min, all are in GIGA
-cable_power_cap = 4;                           
-loc_storage_cap = 100;      
+cable_power_cap = 4.5;                           
+loc_storage_capacity = 100;      
 loc_storage_low = 10;
 
 loc_power_cap = 1;
@@ -114,7 +114,7 @@ big_storage_efficiency = 1;
 
 % Adjust demand
 baseloadsum = mean(power_demand_matrix,"all");
-baseload_percentage = 0.19; %[0.2,0.2,0.2]';
+baseload_percentage = 0.2; %[0.2,0.2,0.2]';
 power_demand_matrix_adjusted = power_demand_matrix.*baseload_percentage;
 
 
@@ -128,8 +128,8 @@ region = ["1","1","1","1","1","1", ...
           "3","3","3","3","3","3"];
 
 
- [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_power_cap_loss,loc_power_cap_loss,tot_effiency,storage_and_tansmission_losses,loc_power_loss] = master_model(power_matrix, region, ...
-    cable_power_cap, loc_power_cap, reg_power_cap, power_demand_matrix_adjusted, loc_storage_cap, loc_storage_low, base_load_tol_constant, ...
+ [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_power_cap_loss,loc_power_cap_loss,storage_and_tansmission_losses,tot_effiency,downtime] = master_model(power_matrix, region, ...
+    cable_power_cap, loc_power_cap, reg_power_cap, power_demand_matrix_adjusted, loc_storage_capacity, loc_storage_low, base_load_tol_constant, ...
     regional_efficiency, across_regions_efficiency, local_storage_efficiency, big_storage_efficiency);
  
  disp('/////          System characteristics          \\\\\')
@@ -137,7 +137,8 @@ region = ["1","1","1","1","1","1", ...
  disp(['Curtailment:                        ', num2str(round(curtailment,2)),'%']);
  disp(['Regional Power cap loss:            ', num2str(round(reg_power_cap_loss,2)),'%']);
  disp(['Local Power cap loss:               ', num2str(round(loc_power_cap_loss,2)),'%']);
- disp(['Storage and transmission losses:    ', num2str(round(storage_and_tansmission_losses,2)),'%']);
+ disp(['Error:                              ', num2str(round(storage_and_tansmission_losses,2)),'%']);
+ disp(['Downtime:                           ', num2str(downtime),'h']);
 
 %% PLOT RESULTS
 X = 1:length(big_storage_vec);
