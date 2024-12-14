@@ -57,26 +57,26 @@ Cut_Out = 25;
 
 %power calc
 Sum = true;
-power_vec_med1 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_med1,Sum);
-power_vec_med2 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_med2,Sum);
-power_vec_med3 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_med3,Sum);
-power_vec_med4 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_med4,Sum);
-power_vec_med5 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_med5,Sum);
-power_vec_med6 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_med6,Sum);
+power_vec_med1 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_med1,Sum);
+power_vec_med2 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_med2,Sum);
+power_vec_med3 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_med3,Sum);
+power_vec_med4 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_med4,Sum);
+power_vec_med5 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_med5,Sum);
+power_vec_med6 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_med6,Sum);
 
-power_vec_atl1 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_atl1,Sum);
-power_vec_atl2 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_atl2,Sum);
-power_vec_atl3 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_atl3,Sum);
-power_vec_atl4 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_atl4,Sum);
-power_vec_atl5 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_atl5,Sum);
-power_vec_atl6 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_atl6,Sum);
+power_vec_atl1 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_atl1,Sum);
+power_vec_atl2 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_atl2,Sum);
+power_vec_atl3 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_atl3,Sum);
+power_vec_atl4 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_atl4,Sum);
+power_vec_atl5 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_atl5,Sum);
+power_vec_atl6 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_atl6,Sum);
 
-power_vec_sca1 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_sca1,Sum);
-power_vec_sca2 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_sca2,Sum);
-power_vec_sca3 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_sca3,Sum);
-power_vec_sca4 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_sca4,Sum);
-power_vec_sca5 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_sca5,Sum);
-power_vec_sca6 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_sca6,Sum);
+power_vec_sca1 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_sca1,Sum);
+power_vec_sca2 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_sca2,Sum);
+power_vec_sca3 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_sca3,Sum);
+power_vec_sca4 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_sca4,Sum);
+power_vec_sca5 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_sca5,Sum);
+power_vec_sca6 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,wind_sca6,Sum);
 
 %% DEMAND POWER CALCULATION
 
@@ -98,7 +98,7 @@ plot(X,power_demand_matrix)
 %% DEFINED PARAMETERS
 
 % Load max and min, all are in GIGA
-cable_power_cap = 4.5;                           
+cable_power_cap = 4;                           
 loc_storage_capacity = 100;      
 loc_storage_low = 10;
 
@@ -114,7 +114,7 @@ big_storage_efficiency = 1;
 
 % Adjust demand
 baseloadsum = mean(power_demand_matrix,"all");
-baseload_percentage = 0.2; %[0.2,0.2,0.2]';
+baseload_percentage = 0.19; %[0.2,0.2,0.2]';
 power_demand_matrix_adjusted = power_demand_matrix.*baseload_percentage;
 
 
@@ -128,7 +128,7 @@ region = ["1","1","1","1","1","1", ...
           "3","3","3","3","3","3"];
 
 
- [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_power_cap_loss,loc_power_cap_loss,storage_and_tansmission_losses,tot_effiency,downtime] = master_model(power_matrix, region, ...
+ [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_power_cap_loss,loc_power_cap_loss,storage_and_tansmission_losses,tot_effiency,downtime] = MasterModel(power_matrix, region, ...
     cable_power_cap, loc_power_cap, reg_power_cap, power_demand_matrix_adjusted, loc_storage_capacity, loc_storage_low, base_load_tol_constant, ...
     regional_efficiency, across_regions_efficiency, local_storage_efficiency, big_storage_efficiency);
  
@@ -143,31 +143,40 @@ region = ["1","1","1","1","1","1", ...
 %% PLOT RESULTS
 X = 1:length(big_storage_vec);
 
+% Costumize plots
+years = 2018:2023;  % Example years
+days_per_year = 365;
+x_ticks = (0:length(years)-1) * days_per_year + 1; % Start of each year
+
 figure(2)
-subplot(1, 3, 1)
-plot(X,loc_storage_matrix(1,:))
+
+set(gcf, 'Position', [100, 100, 1200, 600])  % [x, y, width, height]
+tiledlayout(1, 3, 'TileSpacing', 'compact', 'Padding', 'compact')
+sgtitle('Local storage over time')
+
+nexttile
+plot(X,smoothdata(loc_storage_matrix(1,:),'movmean',5))
 title('Example region 1')
-xlabel('Time (h)')
+xticklabels(years);
+xlim([0, length(X)]);
 ylabel('Energy (GWh)')
 grid on 
 grid minor
 
-subplot(1, 3, 2)
+nexttile
 plot(X,loc_storage_matrix(7,:))
 title('Example region 2')
-xlabel('Time (h)')
-ylabel('Energy (GWh)')
+xticklabels(years);
 grid on 
 grid minor
 
-subplot(1, 3, 3)
+nexttile
 plot(X,loc_storage_matrix(13,:))
 title('Example region 3')
-xlabel('Time (h)')
-ylabel('Energy (GWh)')
+xticklabels(years);
 grid on 
 grid minor
-sgtitle('Local storage over time')
+
 
 figure(3)
 hold on
@@ -175,7 +184,7 @@ plot(X,power_out_matrix(1,:))
 plot(X,power_out_matrix(7,:))
 plot(X,power_out_matrix(13,:))
 title('Power supply out')
-xlabel('Time (h)')
+xticklabels(years);
 ylabel('Power (GW)')
 legend('park1','park2','park3')
 grid on 
@@ -184,8 +193,8 @@ grid minor
 figure(4)
 plot(X,big_storage_vec)
 title('Big storage over time')
-xlabel('Time (h)')
 ylabel('Energy (GWh)')
+xticklabels(years);
 grid on 
 grid minor
 
@@ -194,7 +203,7 @@ hold on
 plot(X,sum(power_out_matrix))
 plot(X,sum(power_demand_matrix))
 title('Total power supply vs demand')
-xlabel('Time (h)')
+xticklabels(years);
 ylabel('Power (GW)')
 legend('Supply','Demand')
 grid on 

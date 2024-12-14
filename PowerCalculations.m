@@ -1,4 +1,4 @@
-function [Power_Values] = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,Wind_Speeds,Sum)
+function [Power_Values] = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power,Wind_Speeds,Sum)
 % Calculate the power generation of a park. Assumes the use of the same
 % turbine. Input the cut in, cut out and rated wind speed for the turbines,
 % as well as the rated power of the entire park and the wind speed data of

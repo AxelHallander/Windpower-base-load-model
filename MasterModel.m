@@ -1,4 +1,4 @@
-function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_power_loss_ratio,loc_power_loss_ratio,storage_and_tansmission_losses,tot_effiency,downtime] = MasterModel(power_matrix, region, ...
+function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_power_loss_ratio,loc_power_loss_ratio,storage_and_tansmission_losses,tot_effiency,downtime] = master_model(power_matrix, region, ...
          cable_power_cap, loc_power_cap, reg_power_cap, base_power_demand, loc_storage_capacity, loc_storage_low, base_load_tol_constant, ...
          regional_efficiency, across_regions_efficiency, local_storage_efficiency, big_storage_efficiency)
 % This functions calculates local storage vectors and power out vectors for each wind park in the system as well 
@@ -38,7 +38,7 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
     regions = unique(region);
 
     % Adjust the minpowerout to the same size as the parr power matrix
-    min_power_out = expand_demand_matrix(base_power_demand,n,T,region);
+    min_power_out = ExpandDemandMatrix(base_power_demand,n,T,region);
     
     % Loop over each timestep
     for t = 2:T
@@ -120,7 +120,7 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
             % Use function that distributes over all regions. Saves any remainder to big storage. 
             available_power = tot_Remaining_Surplus;
             [surplus_parks,deficit_parks,tot_Remaining_Surplus] = prioritized_reg_transmission(surplus_parks,deficit_parks,region,remaining_regions,across_regions_efficiency,loc_storage_matrix,t,available_power);
-      
+
             % Update remaining surplus
             tot_Remaining_Surplus = sum(deficit_parks) + tot_Remaining_Surplus;
             
@@ -133,31 +133,10 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
                     % Saves the over capacity
                     over_capacity = tot_Remaining_Surplus - reg_power_cap;
                    
-                    % Find out how much more all parks can store in local
-                    loc_allocated_charge = loc_power_cap - (loc_storage_matrix(:, t) - loc_storage_matrix(:, t-1));
-                    
-                    % sort parks according to lowest storage
-                    [~, sortedIndices] = sort(loc_storage_matrix(:, t), 'ascend');
-
-                    % Allocate over charge based on sorted order of local storage
-                    for idx = sortedIndices'
-                        
-                        % break when over_capacity is below zero and local storage is full
-                        if over_capacity <= 0 
-                            break;
-                        elseif loc_storage_matrix(idx,t) >= loc_storage_capacity
-                            break;
-                        else
-                            % Decide allocation for this park (regional efficencies has already been applied, reverse this)
-                            allocation = min(loc_allocated_charge(idx),over_capacity)/big_storage_efficiency;
-                            
-                            % Update local storage for this park and update remaining over capacity
-                            loc_storage_matrix(idx,t) = loc_storage_matrix(idx,t) + allocation*local_storage_efficiency;
-                            over_capacity = over_capacity - allocation;
-                            
-                        end
-                    end
-                    
+                    % Stores in local if there still is some power
+                    % available from before (this occurs at the same tame as step 1)
+                    [loc_storage_matrix, over_capacity] = local_storage_charge(loc_storage_matrix,loc_power_cap,loc_storage_capacity,over_capacity,big_storage_efficiency,local_storage_efficiency,regional_efficiency,t);
+    
                     % Apply cap 
                     [loc_storage_matrix(:,t),reg_power_loss(t)] = cap_storage(loc_storage_matrix(:,t), loc_storage_capacity);
 
