@@ -14,7 +14,6 @@ function [loc_storage_matrix,region_excess_power] = local_storage_excess_low_lim
 
             %decide how much energy to store:
             stored_energy = min(region_excess_power(r), min(loc_storage_low(p)-current_storage, loc_power_cap(p)));
-            %disp(stored_energy)
 
             %Update storage
             loc_storage_matrix(p, t) = loc_storage_matrix(p, t) + local_storage_efficiency*stored_energy;

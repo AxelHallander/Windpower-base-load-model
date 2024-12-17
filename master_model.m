@@ -28,16 +28,20 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
     loc_storage_matrix = zeros(n,T);
     power_out_matrix = zeros(n,T);
     big_storage_vec = zeros(1,T);
-    big_storage_vec(1) = 2000; %some start resorvior storage
+    big_storage_vec(1) = 8000; %some start resorvior storage
     curtailment_loss = zeros(1,T);
     reg_power_loss = zeros(1,T);
     loc_power_loss = zeros(1,T);
 
     % Create info about the parks
-    rated_powers = Rated_Power_area*park_areas';
-    loc_storage_caps = rated_powers*loc_storage_cap;
+    rated_powers = park_areas'*Rated_Power_area
+    mean_rated_power = mean(rated_powers);
+    mean_powers = mean(power_matrix,2)
+    adjusted_mean_powers = mean_powers*mean_rated_power/mean(mean_powers)
+    % Scale by mean power
+    loc_storage_caps = adjusted_mean_powers*loc_storage_cap;
     loc_storage_lows = loc_storage_caps*loc_storage_low;
-    cable_power_caps = cable_power_cap*rated_powers;
+    cable_power_caps = cable_power_cap*adjusted_mean_powers;
     loc_power_caps = loc_storage_caps*loc_power_cap;
 
     % Differentiate unique regions
@@ -45,11 +49,15 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
 
     % Adjust the minpowerout to the same size as the parr power matrix
     min_power_out = expand_demand_matrix(base_power_demand,n,T,region);
+    %disp(min_power_out(:,end))
+    %disp(sum(unique(min_power_out(:,end))))
 
     % Loop over each timestep
     for t = 2:T
         % Distriute the demand over all parks in the same region
-        distributed_min_power_out = distribute_demand_by_parks(min_power_out(:,t),region, park_areas);
+        distributed_min_power_out = distribute_demand_by_parks(min_power_out(:,t),region, mean_powers);
+        %disp(distributed_min_power_out)
+        %disp(sum(distributed_min_power_out))
 
         % Calculate power balance for each park
         power_diff_vec = power_matrix(:, t) - distributed_min_power_out;
@@ -65,10 +73,6 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
         surplus_parks = max(power_diff_vec, 0);     %if value>0 it gets stored, otherwise it is zero for that index
         deficit_parks = min(power_diff_vec, 0);    % If vulue<0 it gets stored, otherwise it is zero for that index
         
-        balance = sum(deficit_parks)+sum(surplus_parks);
-        % if balance > reg_power_cap
-        %     disp(balance)
-        % end
         % Step 1: handle power beyond caple_power_cap: store in local!
 
         % Create a logical array for parks exceeding the cable power cap

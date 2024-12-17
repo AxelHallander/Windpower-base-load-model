@@ -70,10 +70,7 @@ end
 clear A_guess C_guess countries countryData countryIndex fittedParams i initialParams phi_guess
 
 %% Plot the Loads
-% Assuming you have the timetables: NorthLoad, WestLoad, and EastLoad
-% and each timetable has a 'Date' and 'SummedMinLoad' variable
 
-% Plot the NorthLoad, WestLoad, and EastLoad on the same graph
 figure;  % Create a new figure
 
 hold on;  % Hold on to overlay all plots
@@ -93,7 +90,6 @@ ylabel('Summed Min Load');  % Label for the y-axis
 title('Electricity Load by Region Over Time');  % Title of the plot
 legend show;  % Show the legend
 
-% Optionally, format the x-axis to show the year
 datetick('x', 'mmm yyyy', 'keepticks');  % Format x-axis to show month and year
 
 grid on;  % Show grid
