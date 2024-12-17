@@ -1,4 +1,5 @@
 function adjusted_output = DistributeDemandByParks(min_power_out, region)
+ 
     % Number of parks and time steps
     [n, T] = size(min_power_out);
     

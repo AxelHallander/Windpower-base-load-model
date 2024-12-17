@@ -236,6 +236,25 @@ xlabel('Wind power at Site 1');
 ylabel('Wind power at Site 2');
 title('Correlation Between Wind Data Sets');
 grid on;
+%% Economics 
+
+cost_CAES_power = 1089*10^6; %GWh
+cost_CAES_energy = 109*10^6; %GW
+cost_PHS_power = 2202*10^6;
+cost_PHS_energy = 220*10^6*0.001;
+cost_wind_power = 1500*10^6; %GW
+cost_cable_power = 140*1.27*10^6; %kW
+
+
+Wind_cost = Rated_Power*size(power_matrix,1)*cost_wind_power
+PHS_cost = reg_power_cap_ch*cost_PHS_power + big_storage_cap*cost_PHS_energy
+CAES_cost = cost_CAES_power*loc_power_cap_ch + cost_CAES_power*(loc_power_cap_dch-loc_power_cap_ch) + cost_CAES_energy*loc_storage_capacity
+Cable_cost = cost_cable_power*cable_power_cap
+
+tot_cost = Wind_cost + PHS_cost + CAES_cost + Cable_cost
+
+
+
 %%
 %find max charge/discharge from big storage:
 T = length(big_storage_vec);
