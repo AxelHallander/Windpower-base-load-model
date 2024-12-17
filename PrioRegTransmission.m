@@ -1,4 +1,4 @@
-function [surplus_parks,deficit_parks,tot_Regional_Surplus] = prioritized_reg_transmission(surplus_parks, ...
+function [surplus_parks,deficit_parks,tot_Regional_Surplus] = PrioRegTransmission(surplus_parks, ...
          deficit_parks,region,regions,regional_efficiency,loc_storage_matrix,t,available_power)
 
 % Step 3: (Inter-regions) Distribute power across different regions.
@@ -21,12 +21,12 @@ function [surplus_parks,deficit_parks,tot_Regional_Surplus] = prioritized_reg_tr
 
         % Attempt to cover the regional deficit using added regional surplus
         if tot_Regional_Surplus >= tot_Regional_Deficit
+            
             % Cover the entire regional deficit with regional surplus
             tot_Regional_Surplus = (tot_Regional_Surplus - tot_Regional_Deficit)*regional_efficiency;
            
             % Set the parks in questions to have no more deficit
-            deficit_parks(region_Indices) = 0;
-            
+            deficit_parks(region_Indices) = 0; 
         else
             % Distribute remaining regional surplus to parks with least local storage
           

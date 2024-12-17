@@ -1,4 +1,5 @@
-function [loc_storage_matrix,region_excess_power] = local_storage_excess_low_lim(loc_storage_matrix,region_excess_power,loc_storage_low,local_storage_efficiency,region_Indices,parks_below_limit,loc_power_cap,r,t)
+function [loc_storage_matrix,region_excess_power] = LocStorageExcessLowLim(loc_storage_matrix,region_excess_power,loc_storage_low,local_storage_efficiency,region_Indices,parks_below_limit,loc_power_cap,r,t)
+
 % Function that stores energy in local storage if there is excess power
 % within the region and if the local storages are below the limit
 % "loc_storage_low". 
@@ -20,6 +21,8 @@ function [loc_storage_matrix,region_excess_power] = local_storage_excess_low_lim
 
             %update the excess power
             region_excess_power(r) = region_excess_power(r) - stored_energy;
+        else
+            break
         end   
     end
 end

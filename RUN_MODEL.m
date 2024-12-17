@@ -6,11 +6,17 @@ path_med = "C:\Users\axel_\Documents\MATLAB\windpower-baseload-project\data\Medi
 path_atl = "C:\Users\axel_\Documents\MATLAB\windpower-baseload-project\data\Atlantic_18-23.grib";
 path_sca = "C:\Users\axel_\Documents\MATLAB\windpower-baseload-project\data\Scandinavia_18-23.grib";
 
+% Find where the electric load CSV is located
+ElectricLoads_path = "C:\Users\axel_\Documents\MATLAB\windpower-baseload-project\data\monthly_hourly_load_values_2023.csv";
+
 %% READ BIG WIND DATA FOR EACH REGION (Vilgot)
 
 path_med = "C:\Users\vilgo\OneDrive\Desktop\Projekt WindBaseload\BIG data\Mediterranean_18-23.grib";
 path_atl = "C:\Users\vilgo\OneDrive\Desktop\Projekt WindBaseload\BIG data\Atlantic_18-23.grib";
 path_sca = "C:\Users\vilgo\OneDrive\Desktop\Projekt WindBaseload\BIG data\Scandinavia_18-23.grib";
+
+% Find where the electric load CSV is located
+ElectricLoads_path = "C:\Users\vilgo\OneDrive\Desktop\Projekt WindBaseload\BIG data\monthly_hourly_load_values_2023.csv";
 %%
 [Wind_Speed_med, geoinfo_med] = ReadWindData(path_med);
 [Wind_Speed_atl, geoinfo_atl] = ReadWindData(path_atl);
@@ -38,7 +44,7 @@ path_sca = "C:\Users\vilgo\OneDrive\Desktop\Projekt WindBaseload\BIG data\Scandi
 [wind_sca3,area_sca3] = ParkWindSpeeds([10.66, 11.1 , 65.92, 65.73],Wind_Speed_sca,geoinfo_sca); 
 [wind_sca4,area_sca4] = ParkWindSpeeds([20.7 , 20.96, 70.47, 70.27],Wind_Speed_sca,geoinfo_sca); 
 [wind_sca5,area_sca5] = ParkWindSpeeds([26.4 , 26.95, 71.35, 71.15],Wind_Speed_sca,geoinfo_sca); 
-[wind_sca6,area_sca6] = ParkWindSpeeds([19.0 , 19.4 , 56.9 , 56.70],Wind_Speed_sca,geoinfo_sca);
+[wind_sca6,area_sca6] = ParkWindSpeeds([19.0 , 19.4 , 56.9 , 56.70],Wind_Speed_sca,geoinfo_sca); 
 
 %% SUPPLY POWER CALCULATIONS
 
@@ -55,26 +61,26 @@ park_areas = [area_med1, area_med2, area_med3, area_med4, area_med5, ...
 
 %power calc
 Sum = true;
-power_vec_med1 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(1),wind_med1,Sum);
-power_vec_med2 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(2),wind_med2,Sum);
-power_vec_med3 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(3),wind_med3,Sum);
-power_vec_med4 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(4),wind_med4,Sum);
-power_vec_med5 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(5),wind_med5,Sum);
-power_vec_med6 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(6),wind_med6,Sum);
+power_vec_med1 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(1),wind_med1,Sum);
+power_vec_med2 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(2),wind_med2,Sum);
+power_vec_med3 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(3),wind_med3,Sum);
+power_vec_med4 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(4),wind_med4,Sum);
+power_vec_med5 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(5),wind_med5,Sum);
+power_vec_med6 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(6),wind_med6,Sum);
 
-power_vec_atl1 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(7),wind_atl1,Sum);
-power_vec_atl2 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(8),wind_atl2,Sum);
-power_vec_atl3 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(9),wind_atl3,Sum);
-power_vec_atl4 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(10),wind_atl4,Sum);
-power_vec_atl5 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(11),wind_atl5,Sum);
-power_vec_atl6 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(12),wind_atl6,Sum);
+power_vec_atl1 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(7),wind_atl1,Sum);
+power_vec_atl2 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(8),wind_atl2,Sum);
+power_vec_atl3 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(9),wind_atl3,Sum);
+power_vec_atl4 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(10),wind_atl4,Sum);
+power_vec_atl5 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(11),wind_atl5,Sum);
+power_vec_atl6 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(12),wind_atl6,Sum);
 
-power_vec_sca1 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(13),wind_sca1,Sum);
-power_vec_sca2 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(14),wind_sca2,Sum);
-power_vec_sca3 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(15),wind_sca3,Sum);
-power_vec_sca4 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(16),wind_sca4,Sum);
-power_vec_sca5 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(17),wind_sca5,Sum);
-power_vec_sca6 = Power_Calculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(18),wind_sca6,Sum);
+power_vec_sca1 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(13),wind_sca1,Sum);
+power_vec_sca2 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(14),wind_sca2,Sum);
+power_vec_sca3 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(15),wind_sca3,Sum);
+power_vec_sca4 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(16),wind_sca4,Sum);
+power_vec_sca5 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(17),wind_sca5,Sum);
+power_vec_sca6 = PowerCalculations(Cut_In,Cut_Out,Rated_Wind,Rated_Power*park_areas(18),wind_sca6,Sum);
 
 %% DEMAND POWER CALCULATION
 
@@ -83,14 +89,10 @@ Regions = containers.Map();
 Regions('1') = {'SE', 'FI', 'EE', 'LV', 'LT', 'DK', 'DE', 'PL'};
 Regions('2') = {'NL', 'BE', 'LU', 'FR', 'IE', 'ES', 'PT'};
 Regions('3') = {'AT', 'SI', 'HR', 'HU', 'RS', 'BA', 'ME', 'XK', ... 
-    'AL', 'GR', 'MK', 'BG', 'MD', 'RO', 'SK', 'CZ', 'IT', 'CH'};
-
-% Find where the electric load CSV is located
-ElectricLoads_Vilgot = "C:\Users\vilgo\OneDrive\Desktop\Projekt WindBaseload\BIG data\monthly_hourly_load_values_2023.csv";
-ElectricLoads_Axel = "C:\Users\axel_\Documents\MATLAB\windpower-baseload-project\data\monthly_hourly_load_values_2023.csv";
+                'AL', 'GR', 'MK', 'BG', 'MD', 'RO', 'SK', 'CZ', 'IT', 'CH'};
 
 % Run Baseload function
-power_demand_matrix = Baseload([2018,2023], Regions, ElectricLoads_Vilgot);
+power_demand_matrix = Baseload([2018,2023], Regions, ElectricLoads_path);
 power_demand_matrix = power_demand_matrix';
 
 %%
@@ -100,14 +102,17 @@ plot(X,power_demand_matrix_adjusted)
 %% DEFINED PARAMETERS
 
 % Load max and min, all are in GIGA
-Rated_Power_area = 0.0125;
 cable_power_cap = 0.9; % portion of rated power                        
 loc_storage_cap = 10; % times the rated power      
 loc_storage_low = 0.2; % portion of the full storage
 
-loc_power_cap = 0.02; % portion of local storage capacity
-reg_power_cap = 10;
-base_load_tol_constant = 0.9;   %tolerance too store in local
+loc_power_cap_ch = 0.02;
+loc_power_cap_dch = 0.02; % portion of local storage capacity
+reg_power_cap_ch = 10;
+reg_power_cap_dch = 20;
+big_storage_cap = 50000;
+
+base_load_tol_constant = 0.95;   %tolerance too store in local
 
 % Efficiency for storage and transmission
 regional_efficiency = 0.97;
@@ -118,69 +123,112 @@ big_storage_efficiency = 0.8;
 % Adjust demand
 baseloadsum = mean(power_demand_matrix,"all");
 baseload_percentage = 0.215;
-power_demand_matrix_adjusted = power_demand_matrix*baseload_percentage;
+base_power_demand = power_demand_matrix.*baseload_percentage;
 
-
+% power_demand_matrix_adjusted = mean(power_demand_matrix_adjusted,2)
 %% RUN MODEL
 
 power_matrix = [power_vec_sca1; power_vec_sca2; power_vec_sca3; power_vec_sca4; power_vec_sca5; power_vec_sca6;
                 power_vec_atl1; power_vec_atl2; power_vec_atl3; power_vec_atl4; power_vec_atl5; power_vec_atl6;
                 power_vec_med1; power_vec_med2; power_vec_med3; power_vec_med4; power_vec_med5; power_vec_med6];
+
 region = ["1","1","1","1","1","1", ...
           "2","2","2","2","2","2", ...
           "3","3","3","3","3","3"];
 
 test_areas = repelem(400,10);
 
- [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_power_cap_loss,loc_power_cap_loss,tot_effiency, loc_power_loss] = master_model(power_matrix, region, ...
-    cable_power_cap, loc_power_cap, reg_power_cap, power_demand_matrix_adjusted, loc_storage_cap, loc_storage_low, base_load_tol_constant, ...
-    regional_efficiency, across_regions_efficiency, local_storage_efficiency, big_storage_efficiency, park_areas, Rated_Power_area);
+[power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_power_loss_ratio,loc_power_loss_ratio, ...
+         storage_and_transmission_losses,tot_effiency,downtime,reg_capacity_loss_ratio] = MasterModel(power_matrix, region, ...
+         cable_power_cap, loc_power_cap_ch, loc_power_cap_dch, reg_power_cap_ch, reg_power_cap_dch, base_power_demand, ...
+         loc_storage_cap, loc_storage_low, base_load_tol_constant, regional_efficiency, across_regions_efficiency, ...
+         local_storage_efficiency, big_storage_efficiency, big_storage_cap, park_areas, Rated_Power);
  
- disp(['Total system efficency:  ', num2str(round(tot_effiency,2)),'%']);
- disp(['Curtailment:             ', num2str(round(curtailment,2)),'%']);
- disp(['Regional Power cap loss: ', num2str(round(reg_power_cap_loss,2)),'%']);
- disp(['Local Power cap loss:    ', num2str(round(loc_power_cap_loss,2)),'%']);
+ disp('/////      System Performance      \\\\\')
+ disp(['Total system efficency:             ', num2str(round(tot_effiency,2)),'%']);
+ disp(['Curtailment:                        ', num2str(round(curtailment,2)),'%']);
+ disp(['Regional Power cap loss:            ', num2str(round(reg_power_cap_loss,2)),'%']);
+ disp(['Local Power cap loss:               ', num2str(round(loc_power_cap_loss,2)),'%']);
+ disp(['Big storage capacity loss:          ', num2str(round(reg_capacity_loss_ratio,2)),'%']);
+ disp(['Storage and transmission losses:    ', num2str(round(storage_and_transmission_losses,2)),'%']);
+ disp(['Downtime:                           ', num2str(downtime),'h']);
+ disp(['Baseload/Installed Power Ratio:     ', num2str(round(sum(mean(power_demand_matrix_adjusted,2))*100/(Rated_Power*size(power_matrix,1)),2)),'%']);
+ disp(['Mean Baseload Power out:            ', num2str(round((sum(mean(power_demand_matrix_adjusted,2))),2)),'GW']);
+
 
 %% PLOT RESULTS
 X = 1:length(big_storage_vec);
 
+% Costumize plots
+years = 2018:2023;  % Example years
+days_per_year = 365;
+x_ticks = (0:length(years)-1) * days_per_year + 1; % Start of each year
+
 figure(2)
-hold on
-subplot(4,1,1)
-plot(X,loc_storage_matrix(1,:))
-subplot(4,1,2)
-plot(X,loc_storage_matrix(2,:))
-subplot(4,1,3)
-plot(X,loc_storage_matrix(3,:))
-subplot(4,1,4)
-plot(X,loc_storage_matrix(4,:))
-title('Local storage over time')
-xlabel('Time (h)')
+
+set(gcf, 'Position', [100, 100, 1200, 600])  % [x, y, width, height]
+tiledlayout(1, 3, 'TileSpacing', 'compact', 'Padding', 'compact')
+sgtitle('Local Storage Over Time')
+
+nexttile
+plot(X,smoothdata(loc_storage_matrix(1,:),'movmean',5))
+title('Example Region 1')
+xticklabels(years);
+xlim([0, length(X)]);
 ylabel('Energy (GWh)')
+grid on 
+grid minor
+
+nexttile
+plot(X,loc_storage_matrix(7,:))
+title('Example Region 2')
+xticklabels(years);
+xlim([0, length(X)]);
+grid on 
+grid minor
+
+nexttile
+plot(X,loc_storage_matrix(13,:))
+title('Example Region 3')
+xticklabels(years);
+xlim([0, length(X)]);
+grid on 
+grid minor
+
 
 figure(3)
 hold on
 plot(X,power_out_matrix(1,:))
 plot(X,power_out_matrix(7,:))
-title('Power supply out')
-xlabel('Time (h)')
+plot(X,power_out_matrix(13,:))
+title('Power Supply Out Example Parks')
+xticklabels(years);
+xlim([0, length(X)]);
 ylabel('Power (GW)')
-legend('park1','park2')
+legend('eg Park reg 1','eg Park reg 2','eg Park reg 3')
+grid on 
+grid minor
 
 figure(4)
 plot(X,big_storage_vec)
-title('Big storage over time')
-xlabel('Time (h)')
+title('Large Central Storage Over Time')
 ylabel('Energy (GWh)')
+xticklabels(years);
+xlim([0, length(X)]);
+grid on 
+grid minor
 
 figure(5)
 hold on
 plot(X,sum(power_out_matrix))
 plot(X,sum(power_demand_matrix))
-title('Total power supply vs demand')
-xlabel('Time (h)')
+title('Power Over Time, Supply vs Demand')
+xticklabels(years);
+xlim([0, length(X)]);
 ylabel('Power (GW)')
 legend('Supply','Demand')
+grid on 
+grid minor
 
 figure(6)
 hold on
@@ -191,19 +239,20 @@ ylabel('Power (GW)')
 legend('Supply','Demand')
 
 %%
-correlation_matrix = corrcoef(power_vec_med1,power_vec3);    
+correlation_matrix = corrcoef(power_vec_med1,power_vec_atl1);    
 correlation_coefficient = correlation_matrix(1, 2);
 
 % Display the result
 fprintf('Correlation Coefficient: %.2f\n', correlation_coefficient);
 
-scatter(power_vec_med1, power_vec2);
+scatter(power_vec_med1, power_vec_atl1);
 xlabel('Wind power at Site 1');
 ylabel('Wind power at Site 2');
 title('Correlation Between Wind Data Sets');
 grid on;
 %%
 %find max charge/discharge from big storage:
-T = length(power_vec3);
+T = length(big_storage_vec);
 diff = max(big_storage_vec(1:2:T)-big_storage_vec(2:2:T))
 
+diff = max(loc_storage_matrix(1,1:2:T)-loc_storage_matrix(1,2:2:T))

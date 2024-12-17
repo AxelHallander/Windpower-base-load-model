@@ -14,8 +14,9 @@ Loads = containers.Map();
 HourlyLoads = containers.Map();
 FittedValues = containers.Map();
 
+
 % Read the data for the electric loads for all countries
-[countryCodes, countryMatrices, minLoadByCountry] = ReadLoadData("C:\Users\vilgo\OneDrive\Desktop\Projekt WindBaseload\BIG data\monthly_hourly_load_values_2023.csv");
+[countryCodes, countryMatrices, minLoadByCountry] = ReadLoadData("C:\Users\axel_\Documents\MATLAB\windpower-baseload-project\data\monthly_hourly_load_values_2023.csv");
 
 %% loop through all regions
 

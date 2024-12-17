@@ -1,7 +1,8 @@
-function [capped_matrix, loss] = cap_storage(matrix, caps)
+function [capped_matrix, loss] = CapStorage(matrix, caps)
 % This function caps the local storage and saves the energy cut so
-% it can be combared later.     
+% it can be combared later.   
 
+    % Compute excess energy
     excess_energy = max(matrix - caps, 0);
 
     % Apply cap
@@ -9,5 +10,5 @@ function [capped_matrix, loss] = cap_storage(matrix, caps)
 
     % Sum the loss over the parks
     loss = sum(excess_energy);
-   
+
 end
