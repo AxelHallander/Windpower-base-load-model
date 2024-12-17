@@ -51,7 +51,7 @@ ElectricLoads_path = "C:\Users\vilgo\OneDrive\Desktop\Projekt WindBaseload\BIG d
 
 %Park and turbine characteristics
 Rated_Power = 5; %*10^9; 
-Rated_Wind = 11;
+Rated_Wind = 10.5;
 Cut_In = 3;
 Cut_Out = 25;
 
@@ -98,47 +98,57 @@ plot(X,power_demand_matrix)
 %% DEFINED PARAMETERS
 
 % Load max and min, all are in GIGA
-cable_power_cap = 4;                           
+cable_power_cap = 4.5;                           
 loc_storage_capacity = 100;      
 loc_storage_low = 10;
 
-loc_power_cap = 1;
-reg_power_cap = 10;
+loc_power_cap_ch = 1;
+loc_power_cap_dch = 1;
+reg_power_cap_ch = 10;
+reg_power_cap_dch = 20;
+big_storage_cap = 50000;
+
 base_load_tol_constant = 0.95;   %tolerance too store in local
 
 % Efficiency for storage and transmission
-regional_efficiency = 1;
-across_regions_efficiency = 1;
-local_storage_efficiency = 1;
-big_storage_efficiency = 1;
+regional_efficiency = 0.97;
+across_regions_efficiency = 0.95;
+local_storage_efficiency = 0.7;
+big_storage_efficiency = 0.8;
 
 % Adjust demand
 baseloadsum = mean(power_demand_matrix,"all");
-baseload_percentage = 0.19; %[0.2,0.2,0.2]';
+baseload_percentage = 0.2; %[0.2,0.2,0.2]';
 power_demand_matrix_adjusted = power_demand_matrix.*baseload_percentage;
 
-
+% power_demand_matrix_adjusted = mean(power_demand_matrix_adjusted,2)
 %% RUN MODEL
 
 power_matrix = [power_vec_sca1; power_vec_sca2; power_vec_sca3; power_vec_sca4; power_vec_sca5; power_vec_sca6;
                 power_vec_atl1; power_vec_atl2; power_vec_atl3; power_vec_atl4; power_vec_atl5; power_vec_atl6;
                 power_vec_med1; power_vec_med2; power_vec_med3; power_vec_med4; power_vec_med5; power_vec_med6];
+
 region = ["1","1","1","1","1","1", ...
           "2","2","2","2","2","2", ...
           "3","3","3","3","3","3"];
 
-
- [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_power_cap_loss,loc_power_cap_loss,storage_and_tansmission_losses,tot_effiency,downtime] = MasterModel(power_matrix, region, ...
-    cable_power_cap, loc_power_cap, reg_power_cap, power_demand_matrix_adjusted, loc_storage_capacity, loc_storage_low, base_load_tol_constant, ...
-    regional_efficiency, across_regions_efficiency, local_storage_efficiency, big_storage_efficiency);
+ [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_power_cap_loss,loc_power_cap_loss, ...
+  storage_and_tansmission_losses,tot_effiency,downtime,reg_capacity_loss_ratio] = MasterModel(power_matrix, ...
+     region, cable_power_cap, loc_power_cap_ch, loc_power_cap_dch, reg_power_cap_ch, reg_power_cap_dch, ...
+     power_demand_matrix_adjusted, loc_storage_capacity,loc_storage_low, base_load_tol_constant, ...
+     regional_efficiency, across_regions_efficiency, local_storage_efficiency, big_storage_efficiency,big_storage_cap);
  
- disp('/////          System characteristics          \\\\\')
+ disp('/////      System Performance      \\\\\')
  disp(['Total system efficency:             ', num2str(round(tot_effiency,2)),'%']);
  disp(['Curtailment:                        ', num2str(round(curtailment,2)),'%']);
  disp(['Regional Power cap loss:            ', num2str(round(reg_power_cap_loss,2)),'%']);
  disp(['Local Power cap loss:               ', num2str(round(loc_power_cap_loss,2)),'%']);
- disp(['Error:                              ', num2str(round(storage_and_tansmission_losses,2)),'%']);
+ disp(['Big storage capacity loss:          ', num2str(round(reg_capacity_loss_ratio,2)),'%']);
+ disp(['Storage and transmission losses:    ', num2str(round(storage_and_tansmission_losses,2)),'%']);
  disp(['Downtime:                           ', num2str(downtime),'h']);
+ disp(['Baseload/Installed Power Ratio:     ', num2str(round(sum(mean(power_demand_matrix_adjusted,2))*100/(Rated_Power*size(power_matrix,1)),2)),'%']);
+ disp(['Mean Baseload Power out:            ', num2str(round((sum(mean(power_demand_matrix_adjusted,2))),2)),'GW']);
+
 
 %% PLOT RESULTS
 X = 1:length(big_storage_vec);
@@ -152,11 +162,11 @@ figure(2)
 
 set(gcf, 'Position', [100, 100, 1200, 600])  % [x, y, width, height]
 tiledlayout(1, 3, 'TileSpacing', 'compact', 'Padding', 'compact')
-sgtitle('Local storage over time')
+sgtitle('Local Storage Over Time')
 
 nexttile
 plot(X,smoothdata(loc_storage_matrix(1,:),'movmean',5))
-title('Example region 1')
+title('Example Region 1')
 xticklabels(years);
 xlim([0, length(X)]);
 ylabel('Energy (GWh)')
@@ -165,15 +175,17 @@ grid minor
 
 nexttile
 plot(X,loc_storage_matrix(7,:))
-title('Example region 2')
+title('Example Region 2')
 xticklabels(years);
+xlim([0, length(X)]);
 grid on 
 grid minor
 
 nexttile
 plot(X,loc_storage_matrix(13,:))
-title('Example region 3')
+title('Example Region 3')
 xticklabels(years);
+xlim([0, length(X)]);
 grid on 
 grid minor
 
@@ -183,18 +195,20 @@ hold on
 plot(X,power_out_matrix(1,:))
 plot(X,power_out_matrix(7,:))
 plot(X,power_out_matrix(13,:))
-title('Power supply out')
+title('Power Supply Out Example Parks')
 xticklabels(years);
+xlim([0, length(X)]);
 ylabel('Power (GW)')
-legend('park1','park2','park3')
+legend('eg Park reg 1','eg Park reg 2','eg Park reg 3')
 grid on 
 grid minor
 
 figure(4)
 plot(X,big_storage_vec)
-title('Big storage over time')
+title('Large Central Storage Over Time')
 ylabel('Energy (GWh)')
 xticklabels(years);
+xlim([0, length(X)]);
 grid on 
 grid minor
 
@@ -202,8 +216,9 @@ figure(5)
 hold on
 plot(X,sum(power_out_matrix))
 plot(X,sum(power_demand_matrix))
-title('Total power supply vs demand')
+title('Power Over Time, Supply vs Demand')
 xticklabels(years);
+xlim([0, length(X)]);
 ylabel('Power (GW)')
 legend('Supply','Demand')
 grid on 
