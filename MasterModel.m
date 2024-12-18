@@ -37,6 +37,7 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
     reg_capacity_loss = zeros(1,T);
     downtime = 0;
 
+    
     % Differentiate unique regions
     regions = unique(region);
 

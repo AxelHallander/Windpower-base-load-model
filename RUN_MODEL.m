@@ -116,7 +116,7 @@ loc_power_cap_ch = 0.02;
 loc_power_cap_dch = 0.02; % portion of local storage capacity
 reg_power_cap_ch = 10;
 reg_power_cap_dch = 20;
-big_storage_cap = 50000;
+big_storage_cap = 25000;
 
 base_load_tol_constant = 0.95;   %tolerance too store in local
 
@@ -180,6 +180,28 @@ test_areas = repelem(400,10);
  disp(['Mean Baseload Power out:            ', num2str(round((sum(mean(base_power_demand,2))),2)),'GW']);
  disp(['Variance of large storage:          ', num2str(var(big_storage_vec))])
 
+%% Economics 
+
+cost_CAES_power = 1089*10^6; %GWh
+cost_CAES_energy = 109*10^6; %GW
+cost_PHS_power = 2202*10^6;
+cost_PHS_energy = 75*10^3;    % or 5.67      %220*10^6;
+cost_wind_power = 1500*10^6;      %GW
+cost_cable_power = 140*1.27*10^6; %kW
+
+wind_cost = Rated_Power*size(power_matrix,1)*cost_wind_power;
+PHS_cost = reg_power_cap_ch*cost_PHS_power + big_storage_cap*cost_PHS_energy;
+CAES_cost = size(power_matrix,1)*(cost_CAES_power*loc_power_cap_ch + cost_CAES_power*(loc_power_cap_dch-loc_power_cap_ch)/loc_power_cap_dch + cost_CAES_energy*loc_storage_capacity);
+cable_cost = size(power_matrix,1)*cost_cable_power*cable_power_cap;
+tot_cost = wind_cost + PHS_cost + CAES_cost + cable_cost;
+
+disp('/////      Economic Performance      \\\\\')
+disp(['Total System Cost:             ', num2str(round(tot_cost)/10^9,4),' Bil USD']);
+disp(['Wind Ratio Cost:               ', num2str(round(wind_cost/tot_cost,3)*100),' %']);
+disp(['CAES Ratio Cost:               ', num2str(round(CAES_cost/tot_cost,3)*100), '%']);
+disp(['PHS Ratio Cost:                ', num2str(round(PHS_cost/tot_cost,3)*100), '%']);
+disp(['Cable Ratio Cost:              ', num2str(round(cable_cost/tot_cost,3)*100), '%']);
+disp(['Cable Ratio Cost:              ', num2str(round((tot_cost/sum(mean(power_out_matrix,2))/10^9),2)), ' USD/W']);
 
 %% PLOT RESULTS
 X = 1:length(big_storage_vec);
@@ -275,6 +297,9 @@ xlabel('Wind power at Site 1');
 ylabel('Wind power at Site 2');
 title('Correlation Between Wind Data Sets');
 grid on;
+
+
+
 %%
 %find max charge/discharge from big storage:
 T = length(big_storage_vec);
