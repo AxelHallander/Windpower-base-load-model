@@ -1,8 +1,8 @@
 function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_power_loss_ratio,loc_power_loss_ratio, ...
          storage_and_transmission_losses,tot_effiency,downtime,reg_capacity_loss_ratio] = MasterModel(power_matrix, region, ...
-         cable_power_cap, loc_power_cap_ch, loc_power_cap_dch, reg_power_cap_ch, reg_power_cap_dch, base_power_demand, ...
-         loc_storage_capacity, loc_storage_low, base_load_tol_constant, regional_efficiency, across_regions_efficiency, ...
-         local_storage_efficiency, big_storage_efficiency, big_storage_cap, park_areas, Rated_Power_area)
+         cable_power_caps, loc_power_caps_ch, loc_power_caps_dch, reg_power_cap_ch, reg_power_cap_dch, base_power_demand, ...
+         loc_storage_caps, loc_storage_lows, base_load_tol_constant, regional_efficiency, across_regions_efficiency, ...
+         local_storage_efficiency, big_storage_efficiency, big_storage_cap, mean_powers)
 % This functions calculates local storage vectors and power out vectors for each wind park in the system as well 
 % as the shared regional storage vector and total curtailment of the system. The input is a power matrix where each
 % column represent one park, a corresponding region array telling which region the parks belong to in order 
@@ -36,18 +36,6 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
     loc_power_loss = zeros(1,T);
     reg_capacity_loss = zeros(1,T);
     downtime = 0;
-
-    % Create info about the parks
-    rated_powers = park_areas'*Rated_Power_area;
-    mean_rated_power = mean(rated_powers);
-    mean_powers = mean(power_matrix,2);
-    adjusted_mean_powers = mean_powers*mean_rated_power/mean(mean_powers);
-    % Scale by mean power
-    loc_storage_caps = adjusted_mean_powers*loc_storage_capacity;
-    loc_storage_lows = loc_storage_caps*loc_storage_low;
-    cable_power_caps = cable_power_cap*adjusted_mean_powers;
-    loc_power_caps_ch = loc_storage_caps*loc_power_cap_ch;
-    loc_power_caps_dch = loc_storage_caps*loc_power_cap_dch;
 
     % Differentiate unique regions
     regions = unique(region);
@@ -101,11 +89,7 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
             
             % Update local storage for the affected parks
             loc_storage_matrix(:, t) = loc_storage_matrix(:, t-1);
-            loc_storage_matrix(parks_beyond, t) = loc_storage_matrix(parks_beyond, t) + surplus_beyond(parks_beyond)*local_storage_efficiency;;
-    
-            % PREVIOUS ERROR: INSTEAD NEXT ROW
-            % Remove the excess from available distribution for affected parks 
-            % surplus_parks(parks_beyond) = surplus_parks(parks_beyond) - surplus_beyond(parks_beyond);  
+            loc_storage_matrix(parks_beyond, t) = loc_storage_matrix(parks_beyond, t) + surplus_beyond(parks_beyond)*local_storage_efficiency;
             
             % set the affected surplus parks to the cable power cap, adjusted for diff
             surplus_parks(parks_beyond) = cable_power_caps(parks_beyond) - distributed_min_power_out(parks_beyond);
