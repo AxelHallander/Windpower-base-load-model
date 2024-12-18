@@ -1,4 +1,4 @@
-function BaseLoadMatrix = Baseload(years, Regions, CSV_file)
+function BaseLoadMatrix = Baseload(years, Regions, CSV_file, amp)
     
     % Leap year shenanigans
     nYears = years(2)-years(1)+1;
@@ -58,8 +58,11 @@ function BaseLoadMatrix = Baseload(years, Regions, CSV_file)
         initialParams = [A_guess, phi_guess, C_guess];
         
         % Fit the sinusoidal model
-        options = optimset('Display', 'off'); % Suppress output
+        options = optimset('Display', 'off'); % dont display
         fittedParams = lsqcurvefit(@(params, t) sinusoidalModel(params, t), initialParams, numericDates, loadValues, [], [], options);
+        
+        % Change amplitude 
+        fittedParams(1) = fittedParams(1) * amp;
         
         FittedValues(region{1}) = sinusoidalModel(fittedParams, numericDates);
         HourlyLoadsCurrent = repelem(FittedValues(region{1}), 24);

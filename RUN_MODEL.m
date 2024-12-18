@@ -63,12 +63,12 @@ rated_powers = park_areas * rated_power;
 
 %power calc
 Sum = true;
-power_vec_med1 = PowerCalculations(cut_in,cut_out,rated_wind,rated_powers(13),wind_med1,Sum);
-power_vec_med2 = PowerCalculations(cut_in,cut_out,rated_wind,rated_powers(14),wind_med2,Sum);
-power_vec_med3 = PowerCalculations(cut_in,cut_out,rated_wind,rated_powers(15),wind_med3,Sum);
-power_vec_med4 = PowerCalculations(cut_in,cut_out,rated_wind,rated_powers(16),wind_med4,Sum);
-power_vec_med5 = PowerCalculations(cut_in,cut_out,rated_wind,rated_powers(17),wind_med5,Sum);
-power_vec_med6 = PowerCalculations(cut_in,cut_out,rated_wind,rated_powers(18),wind_med6,Sum);
+power_vec_sca1 = PowerCalculations(cut_in,cut_out,rated_wind,rated_powers(1),wind_sca1,Sum);
+power_vec_sca2 = PowerCalculations(cut_in,cut_out,rated_wind,rated_powers(2),wind_sca2,Sum);
+power_vec_sca3 = PowerCalculations(cut_in,cut_out,rated_wind,rated_powers(3),wind_sca3,Sum);
+power_vec_sca4 = PowerCalculations(cut_in,cut_out,rated_wind,rated_powers(4),wind_sca4,Sum);
+power_vec_sca5 = PowerCalculations(cut_in,cut_out,rated_wind,rated_powers(5),wind_sca5,Sum);
+power_vec_sca6 = PowerCalculations(cut_in,cut_out,rated_wind,rated_powers(6),wind_sca6,Sum);
 
 power_vec_atl1 = PowerCalculations(cut_in,cut_out,rated_wind,rated_powers(7),wind_atl1,Sum);
 power_vec_atl2 = PowerCalculations(cut_in,cut_out,rated_wind,rated_powers(8),wind_atl2,Sum);
@@ -77,12 +77,12 @@ power_vec_atl4 = PowerCalculations(cut_in,cut_out,rated_wind,rated_powers(10),wi
 power_vec_atl5 = PowerCalculations(cut_in,cut_out,rated_wind,rated_powers(11),wind_atl5,Sum);
 power_vec_atl6 = PowerCalculations(cut_in,cut_out,rated_wind,rated_powers(12),wind_atl6,Sum);
 
-power_vec_sca1 = PowerCalculations(cut_in,cut_out,rated_wind,rated_powers(1),wind_sca1,Sum);
-power_vec_sca2 = PowerCalculations(cut_in,cut_out,rated_wind,rated_powers(2),wind_sca2,Sum);
-power_vec_sca3 = PowerCalculations(cut_in,cut_out,rated_wind,rated_powers(3),wind_sca3,Sum);
-power_vec_sca4 = PowerCalculations(cut_in,cut_out,rated_wind,rated_powers(4),wind_sca4,Sum);
-power_vec_sca5 = PowerCalculations(cut_in,cut_out,rated_wind,rated_powers(5),wind_sca5,Sum);
-power_vec_sca6 = PowerCalculations(cut_in,cut_out,rated_wind,rated_powers(6),wind_sca6,Sum);
+power_vec_med1 = PowerCalculations(cut_in,cut_out,rated_wind,rated_powers(13),wind_med1,Sum);
+power_vec_med2 = PowerCalculations(cut_in,cut_out,rated_wind,rated_powers(14),wind_med2,Sum);
+power_vec_med3 = PowerCalculations(cut_in,cut_out,rated_wind,rated_powers(15),wind_med3,Sum);
+power_vec_med4 = PowerCalculations(cut_in,cut_out,rated_wind,rated_powers(16),wind_med4,Sum);
+power_vec_med5 = PowerCalculations(cut_in,cut_out,rated_wind,rated_powers(17),wind_med5,Sum);
+power_vec_med6 = PowerCalculations(cut_in,cut_out,rated_wind,rated_powers(18),wind_med6,Sum);
 
 %% DEMAND POWER CALCULATION
 
@@ -93,8 +93,12 @@ Regions('2') = {'NL', 'BE', 'LU', 'FR', 'IE', 'ES', 'PT'};
 Regions('3') = {'AT', 'SI', 'HR', 'HU', 'RS', 'BA', 'ME', 'XK', ... 
                 'AL', 'GR', 'MK', 'BG', 'MD', 'RO', 'SK', 'CZ', 'IT', 'CH'};
 
+% Set Baseload amplifier, makes the baseload larger in winter and smaller
+% at summertime
+amp = 1.6;
+
 % Run Baseload function
-power_demand_matrix = Baseload([2018,2023], Regions, ElectricLoads_path);
+power_demand_matrix = Baseload([2018,2023], Regions, ElectricLoads_path, amp);
 power_demand_matrix = power_demand_matrix';
 
 %%
@@ -104,8 +108,8 @@ plot(X,power_demand_matrix_adjusted)
 %% DEFINED PARAMETERS
 
 % Load max and min, all are in GIGA
-cable_power_cap = 0.8; % portion of rated power                        
-loc_storage_capacity = 10; % times the rated power      
+cable_power_cap = 0.8; % scales by rated power - mean power, see below                        
+loc_storage_capacity = 10; % times the mean power generation     
 loc_storage_low = 0.2; % portion of the full storage
 
 loc_power_cap_ch = 0.02;
@@ -130,21 +134,21 @@ base_power_demand = power_demand_matrix.*baseload_percentage;
 % power_demand_matrix_adjusted = mean(power_demand_matrix_adjusted,2)
 
 %% CREATE PARK INFO
-% Create info about the parks
+
 mean_powers = mean(power_matrix,2);
 
 % Performance indices
 capacity_factors = mean_powers./rated_powers;
 potential_factors = (1-capacity_factors).*rated_powers;
     
-% Scale storage and transmission by mean power
+% Scale storage and transmission by mean power generation
 loc_storage_caps = mean_powers * loc_storage_capacity;
 loc_storage_lows = loc_storage_caps * loc_storage_low;
 cable_power_caps = mean_powers + cable_power_cap*potential_factors;
     
 % local storage power capacities
-loc_power_caps_ch = loc_storage_caps*loc_power_cap_ch;
-loc_power_caps_dch = loc_storage_caps*loc_power_cap_dch;
+loc_power_caps_ch = loc_storage_caps * loc_power_cap_ch;
+loc_power_caps_dch = loc_storage_caps * loc_power_cap_dch;
 
 %% RUN MODEL
 
@@ -174,6 +178,7 @@ test_areas = repelem(400,10);
  disp(['Downtime:                           ', num2str(downtime),'h']);
  disp(['Baseload/Installed Power Ratio:     ', num2str(round(sum(mean(base_power_demand,2))*100/(mean(rated_powers)*size(power_matrix,1)),2)),'%']);
  disp(['Mean Baseload Power out:            ', num2str(round((sum(mean(base_power_demand,2))),2)),'GW']);
+ disp(['Variance of large storage:          ', num2str(var(big_storage_vec))])
 
 
 %% PLOT RESULTS
