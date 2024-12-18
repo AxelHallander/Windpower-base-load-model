@@ -37,7 +37,8 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
     reg_capacity_loss = zeros(1,T);
     downtime = 0;
 
-    
+    mean_powers = mean(power_matrix,2);
+
     % Differentiate unique regions
     regions = unique(region);
 
@@ -47,7 +48,7 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
     % Loop over each timestep
     for t = 2:T
         % Distriute the demand over all parks in the same region
-        distributed_min_power_out = DistributeDemandByParks(min_power_out(:,t),region);
+        distributed_min_power_out = DistributeDemandByParks(min_power_out(:,t),mean_powers,region);
 
         % Calculate power balance for each park
         power_diff_vec = power_matrix(:, t) - distributed_min_power_out;

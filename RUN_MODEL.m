@@ -165,6 +165,16 @@ CAES_cost = size(power_matrix,1)*(cost_CAES_power*loc_power_cap_ch + cost_CAES_p
 cable_cost = size(power_matrix,1)*cost_cable_power*cable_power_cap;
 tot_cost = wind_cost + PHS_cost + CAES_cost + cable_cost;
 
+% Define labels and costs
+labels = {'Wind Power', 'PHS', 'CAES', 'Cables'};
+costs = [wind_cost, PHS_cost, CAES_cost, cable_cost];
+tbl = table(labels,costs);
+
+% Create the pie chart
+figure;
+piechart(tbl,"costs", "labels");
+title(['Cost Distribution with total cost: ', num2str(round(tot_cost)/10^9,4),' Bil USD']);
+
 disp('/////      Economic Performance      \\\\\')
 disp(['Total System Cost:             ', num2str(round(tot_cost)/10^9,4),' Bil USD']);
 disp(['Wind Ratio Cost:               ', num2str(round(wind_cost/tot_cost,3)*100),' %']);
