@@ -1,5 +1,5 @@
 function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_power_loss_ratio,loc_power_loss_ratio, ...
-         storage_and_tansmission_losses,tot_effiency,downtime,reg_capacity_loss_ratio] = MasterModel(power_matrix, region, ...
+         storage_and_tansmission_losses,tot_effiency,downtime,reg_capacity_loss_ratio,regional_transmission_surplus,regional_transmission_deficit] = MasterModel(power_matrix, region, ...
          cable_power_cap, loc_power_cap_ch, loc_power_cap_dch, reg_power_cap_ch, reg_power_cap_dch, base_power_demand, ...
          loc_storage_capacity, loc_storage_low, base_load_tol_constant, regional_efficiency, across_regions_efficiency, ...
          local_storage_efficiency, big_storage_efficiency,big_storage_cap)
@@ -30,7 +30,7 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
     loc_storage_matrix = zeros(n,T);
     power_out_matrix = zeros(n,T);
     big_storage_vec = zeros(1,T);
-    big_storage_vec(1) = 10000; %some start resorvior storage
+    big_storage_vec(1) = big_storage_cap/2; %some start resorvior storage
     curtailment_loss = zeros(1,T);
     reg_power_loss = zeros(1,T);
     loc_power_loss = zeros(1,T);
@@ -41,6 +41,9 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
 
     % Differentiate unique regions
     regions = unique(region);
+
+    regional_transmission_surplus = zeros(size(regions,2),T);
+    regional_transmission_deficit = zeros(size(regions,2),T);
 
     % Adjust the minpowerout to the same size as the parr power matrix
     min_power_out = ExpandDemandMatrix(base_power_demand,n,T,region);
@@ -112,7 +115,10 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
     
         % Step 3: Distribute remaining surplus across/between regions. If there is power remainging (tot_remainging_surplus)
         % then distribute this to other regions, If there is still more, move to another region. 
-     
+        
+        regional_transmission_surplus(:,t) = region_excess_power;
+        regional_transmission_deficit(:,t) = region_deficit_power;
+
         tot_Remaining_Surplus = sum(region_excess_power);
 
         % If there are any power left within regional transmission, handle it between regions
@@ -184,7 +190,7 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
         if energy_left > reg_power_cap_dch
 
             % Calculate power loss and set big storage power to cap
-            reg_power_loss(t) = energy_left - reg_power_cap_dch;
+            reg_power_loss(t) = reg_power_loss(t) + energy_left - reg_power_cap_dch;
             energy_left = reg_power_cap_dch;
 
             % Find deficit park indicies.
@@ -250,6 +256,7 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
     curtailment = tot_loss/tot_power*100;
     storage_and_tansmission_losses = 100 - tot_effiency - reg_power_loss_ratio - loc_power_loss_ratio - curtailment - reg_capacity_loss_ratio;
     toc;
-
-    disp((sum(power_out_matrix,'all')+sum(loc_storage_matrix(:,T))+big_storage_vec(T)- big_storage_vec(1)+ tot_loss+tot_reg_power_loss)/tot_power)
+    
+    
+    %disp((sum(power_out_matrix,'all')+sum(loc_storage_matrix(:,T))+big_storage_vec(T)- big_storage_vec(1)+ tot_loss+tot_reg_power_loss)/tot_power)
 end

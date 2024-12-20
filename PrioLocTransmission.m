@@ -40,7 +40,7 @@ function [surplus_parks,deficit_parks,region_excess_power,region_deficit_power,l
             
             % Cover the entire regional deficit with regional surplus
             region_excess_power(r) = (tot_Regional_Surplus - tot_Regional_Deficit)*regional_efficiency;
-            
+            region_deficit_power(r) = 0;
             % Set the deficit parks to zero
             deficit_parks(region_Indices) = 0;
             
@@ -69,11 +69,10 @@ function [surplus_parks,deficit_parks,region_excess_power,region_deficit_power,l
                 
                 % Update the overall balance
                 tot_Regional_Surplus = tot_Regional_Surplus - allocation/regional_efficiency;
-                tot_Regional_Deficit = tot_Regional_Deficit - allocation/regional_efficiency; % kan tas bort
+                tot_Regional_Deficit = tot_Regional_Deficit - allocation/regional_efficiency; 
             end 
+            % Update remainging region deficit
+            region_deficit_power(r) = tot_Regional_Deficit;
         end
-
-        % Update remainging region deficit
-        region_deficit_power(r) = tot_Regional_Deficit;
     end
 end

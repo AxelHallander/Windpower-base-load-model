@@ -88,7 +88,8 @@ Regions('3') = {'AT', 'SI', 'HR', 'HU', 'RS', 'BA', 'ME', 'XK', ...
                 'AL', 'GR', 'MK', 'BG', 'MD', 'RO', 'SK', 'CZ', 'IT', 'CH'};
 
 % Run Baseload function
-power_demand_matrix = Baseload([2018,2023], Regions, ElectricLoads_path);
+amp = 1.8;
+power_demand_matrix = Baseload([2018,2023], Regions, ElectricLoads_path, amp);
 power_demand_matrix = power_demand_matrix';
 
 %%
@@ -99,11 +100,11 @@ plot(X,power_demand_matrix)
 
 % Load max and min, all are in GIGA
 cable_power_cap = 5;                           
-loc_storage_capacity = 10;      
-loc_storage_low = 1;
+loc_storage_capacity = 2.5;      
+loc_storage_low = 0.5;
 
-loc_power_cap_ch = 1;
-loc_power_cap_dch = 1;
+loc_power_cap_ch = 0.5;
+loc_power_cap_dch = 0.5;
 reg_power_cap_ch = 10;
 reg_power_cap_dch = 20;
 big_storage_cap = 25000;
@@ -118,10 +119,9 @@ big_storage_efficiency = 0.8;
 
 % Adjust demand
 baseloadsum = mean(power_demand_matrix,"all");
-baseload_percentage = 0.205; %[0.2,0.2,0.2]';
+baseload_percentage = 0.2025; %[0.2,0.2,0.2]';
 power_demand_matrix_adjusted = power_demand_matrix.*baseload_percentage;
 
-% power_demand_matrix_adjusted = mean(power_demand_matrix_adjusted,2)
 %% RUN MODEL
 
 power_matrix = [power_vec_sca1; power_vec_sca2; power_vec_sca3; power_vec_sca4; power_vec_sca5; power_vec_sca6;
@@ -133,7 +133,7 @@ region = ["1","1","1","1","1","1", ...
           "3","3","3","3","3","3"];
 
  [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_power_cap_loss,loc_power_cap_loss, ...
-  storage_and_tansmission_losses,tot_effiency,downtime,reg_capacity_loss_ratio] = MasterModel(power_matrix, ...
+  storage_and_tansmission_losses,tot_effiency,downtime,reg_capacity_loss_ratio,regional_transmission_surplus,regional_transmission_deficit] = MasterModel(power_matrix, ...
      region, cable_power_cap, loc_power_cap_ch, loc_power_cap_dch, reg_power_cap_ch, reg_power_cap_dch, ...
      power_demand_matrix_adjusted, loc_storage_capacity,loc_storage_low, base_load_tol_constant, ...
      regional_efficiency, across_regions_efficiency, local_storage_efficiency, big_storage_efficiency,big_storage_cap);
@@ -155,7 +155,7 @@ region = ["1","1","1","1","1","1", ...
 cost_CAES_power = 1089*10^6; %GWh
 cost_CAES_energy = 109*10^6; %GW
 cost_PHS_power = 2202*10^6;
-cost_PHS_energy = 75*10^3;    % or 5.67      %220*10^6;
+cost_PHS_energy = 75*10^3;    % or 5.67      %220*10^6;    40*10^6;%
 cost_wind_power = 1500*10^6;      %GW
 cost_cable_power = 140*1.27*10^6; %kW
 
@@ -181,7 +181,7 @@ disp(['Wind Ratio Cost:               ', num2str(round(wind_cost/tot_cost,3)*100
 disp(['CAES Ratio Cost:               ', num2str(round(CAES_cost/tot_cost,3)*100), '%']);
 disp(['PHS Ratio Cost:                ', num2str(round(PHS_cost/tot_cost,3)*100), '%']);
 disp(['Cable Ratio Cost:              ', num2str(round(cable_cost/tot_cost,3)*100), '%']);
-disp(['Cable Ratio Cost:              ', num2str(round((tot_cost/sum(mean(power_out_matrix,2))/10^9),2)), ' USD/W']);
+disp(['Capital Cost:                  ', num2str(round((tot_cost/sum(mean(power_out_matrix,2))/10^9),2)), ' USD/W']);
 
 %% PLOT RESULTS
 X = 1:length(big_storage_vec);
@@ -256,6 +256,31 @@ ylabel('Power (GW)')
 legend('Supply','Demand')
 grid on 
 grid minor
+
+%%
+disp('/////   Large Central Storage Performance  \\\\\')
+disp(['Max diff:             ', num2str(round(max(big_storage_vec)- big_storage_cap/2),6),' GWh']);
+disp(['Min diff:             ', num2str(round(big_storage_cap/2 - min(big_storage_vec)),6),' GWh']);
+disp(['Variance:             ', num2str((var(big_storage_vec)/10^9)),'GWh']);
+
+%%
+ %options = optimset('Display', 'off'); % Suppress output
+ %fittedParams = lsqcurvefit(@(params, t) sinusoidalModel(params, t), initialParams, numericDates, loadValues, [], [], options);
+ 
+ b = regional_transmission_surplus(1,:)-regional_transmission_deficit(1,:);
+ c = regional_transmission_surplus(2,:)-regional_transmission_deficit(2,:);
+ d = regional_transmission_surplus(3,:)-regional_transmission_deficit(3,:);
+ y1 = smoothdata(b,'sgolay',2000);
+ y2 = smoothdata(c,'sgolay',2000);
+ y3 = smoothdata(d,'sgolay',2000);
+ 
+ figure() 
+ hold on
+ plot(X,y1)
+ plot(X,y2)
+ plot(X,y3)
+
+
 
 %%
 correlation_matrix = corrcoef(power_vec_med1,power_vec_atl1);    
