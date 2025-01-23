@@ -1,5 +1,8 @@
 function adjusted_output = DistributeDemandByParks(min_power_out,mean_powers, region)
- 
+% Through the input of mean power and min_power_out (based on the demand) the adjusted power
+% is calculated; meaning that every park gets a propotianal share of demand
+% to be supplied based on the mean wind speeds of the park location. 
+
     % Number of parks and time steps
     [n, T] = size(min_power_out);
     

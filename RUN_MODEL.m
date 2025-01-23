@@ -29,14 +29,16 @@ ElectricLoads_path = "C:\Users\vilgo\OneDrive\Desktop\Projekt WindBaseload\BIG d
 
 
 
-%% READ IN EACH PARK region meditarian
+%% READ IN EACH PARK per REGION
 tic
-%Park and turbine characteristics
-rated_power = 5;    %*10^9; 
-rated_wind = 10.5;
-cut_in = 3;
-cut_out = 25;
 
+%Park and turbine characteristics
+rated_power = 5;    % GW 
+rated_wind = 10.5;  % m/s
+cut_in = 3;         % m/s
+cut_out = 25;       % m/s
+
+% Medeterranean
 coordinates_med = [ 3.35,  3.65, 42.40, 42.24;
                    26.35, 26.65, 35.25, 35.08;
                    -2.99, -2.75, 36.60, 36.40;
@@ -52,7 +54,7 @@ wind_parks_power_med12 = READDATA(path_med_12,coordinates_med,rated_power,rated_
 
 wind_parks_power_med = [wind_parks_power_med06,wind_parks_power_med12,wind_parks_power_med18];
 
-% atlantic
+% Atlantic
 coordinates_atl = [-8.65 ,-8.27 , 43.85, 43.70;
                    -11.0 ,-10.60, 51.60, 51.40;
                    -7.35 ,-7.0  , 56.84, 56.70;
@@ -84,7 +86,7 @@ wind_parks_power_sca12 = READDATA(path_sca_12,coordinates_sca,rated_power,rated_
 
 wind_parks_power_sca = [wind_parks_power_sca06,wind_parks_power_sca12,wind_parks_power_sca18];
 toc
-%%
+
 power_matrix = [wind_parks_power_sca; wind_parks_power_atl; wind_parks_power_med];
 
 
@@ -98,15 +100,12 @@ Regions('3') = {'AT', 'SI', 'HR', 'HU', 'RS', 'BA', 'ME', 'XK', ...
                 'AL', 'GR', 'MK', 'BG', 'MD', 'RO', 'SK', 'CZ', 'IT', 'CH'};
 
 % Run Baseload function
-amp = 2;
+amp = 2; %sinus amplitude amplifier
 power_demand_matrix = Baseload([2006,2023], Regions, ElectricLoads_path, amp);
 power_demand_matrix = power_demand_matrix';
 
-%%
-hold on
-plot(X,power_demand_matrix)
 
-%% DEFINED PARAMETERS
+%% DEFINED VARIABLE PARAMETERS
 
 % Load max and min, all are in GIGA
 cable_power_cap = 5;                           
@@ -158,13 +157,15 @@ region = ["1","1","1","1","1","1", ...
 
 %% Economics 
 
+% Defined CAPEX
 cost_CAES_power = 1089*10^6; %GWh
 cost_CAES_energy = 109*10^6; %GW
 cost_PHS_power = 2202*10^6;
 cost_PHS_energy = 75*10^3;    % or 5.67      %220*10^6;    40*10^6;%
-cost_wind_power = 1500*10^6;      %GW
+cost_wind_power = 3300*10^6;      %GW
 cost_cable_power = 140*1.27*10^6; %kW
 
+% System costs
 wind_cost = rated_power*size(power_matrix,1)*cost_wind_power;
 PHS_cost = reg_power_cap_ch*cost_PHS_power + big_storage_cap*cost_PHS_energy;
 CAES_cost = size(power_matrix,1)*(cost_CAES_power*loc_power_cap_ch + cost_CAES_power*(loc_power_cap_dch-loc_power_cap_ch)/loc_power_cap_dch + cost_CAES_energy*loc_storage_capacity);
@@ -208,7 +209,6 @@ plot(X,loc_storage_matrix(1,:))
 title('Example Region 1')
 xticks(x_ticks);
 xticklabels(years);
-%xlim([0, length(X)]);
 ylabel('Energy (GWh)')
 grid on 
 grid minor
@@ -218,7 +218,6 @@ plot(X,loc_storage_matrix(7,:))
 title('Example Region 2')
 xticks(x_ticks);
 xticklabels(years);
-%xlim([0, length(X)]);
 grid on 
 grid minor
 
@@ -227,7 +226,6 @@ plot(X,loc_storage_matrix(13,:))
 title('Example Region 3')
 xticks(x_ticks);
 xticklabels(years);
-%xlim([0, length(X)]);
 grid on 
 grid minor
 
@@ -240,7 +238,6 @@ plot(X,power_out_matrix(13,:))
 title('Power Supply Out Example Parks')
 xticks(x_ticks);
 xticklabels(years);
-%xlim([0, length(X)]);
 ylabel('Power (GW)')
 legend('eg Park reg 1','eg Park reg 2','eg Park reg 3')
 grid on 
@@ -252,7 +249,6 @@ title('Large Central Storage Over Time')
 ylabel('Energy (GWh)')
 xticks(x_ticks);
 xticklabels(years);
-%xlim([0, length(X)]);
 grid on 
 grid minor
 
@@ -263,7 +259,6 @@ plot(X,sum(power_demand_matrix))
 title('Power Over Time, Supply vs Demand')
 xticks(x_ticks);
 xticklabels(years);
-%xlim([0, length(X)]);
 ylabel('Power (GW)')
 legend('Supply','Demand')
 grid on 
@@ -284,43 +279,3 @@ disp(['Max diff:             ', num2str(round(max(big_storage_vec)- big_storage_
 disp(['Min diff:             ', num2str(round(big_storage_cap/2 - min(big_storage_vec)),6),' GWh']);
 disp(['Variance:             ', num2str((var(big_storage_vec)/10^9)),'GWh']);
 
-%%
- %options = optimset('Display', 'off'); % Suppress output
- %fittedParams = lsqcurvefit(@(params, t) sinusoidalModel(params, t), initialParams, numericDates, loadValues, [], [], options);
- 
- b = regional_transmission_surplus(1,:)-regional_transmission_deficit(1,:);
- c = regional_transmission_surplus(2,:)-regional_transmission_deficit(2,:);
- d = regional_transmission_surplus(3,:)-regional_transmission_deficit(3,:);
- y1 = smoothdata(b,'sgolay',2000);
- y2 = smoothdata(c,'sgolay',2000);
- y3 = smoothdata(d,'sgolay',2000);
- 
- figure() 
- hold on
- plot(X,y1)
- plot(X,y2)
- plot(X,y3)
-
-
-
-%%
-correlation_matrix = corrcoef(power_vec_med1,power_vec_atl1);    
-correlation_coefficient = correlation_matrix(1, 2);
-
-% Display the result
-fprintf('Correlation Coefficient: %.2f\n', correlation_coefficient);
-
-scatter(power_vec_med1, power_vec_atl1);
-xlabel('Wind power at Site 1');
-ylabel('Wind power at Site 2');
-title('Correlation Between Wind Data Sets');
-grid on;
-
-
-
-%%
-%find max charge/discharge from big storage:
-T = length(big_storage_vec);
-diff = max(big_storage_vec(1:2:T)-big_storage_vec(2:2:T))
-
-diff = max(loc_storage_matrix(1,1:2:T)-loc_storage_matrix(1,2:2:T))

@@ -1,14 +1,18 @@
 function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_power_loss_ratio,loc_power_loss_ratio, ...
-         storage_and_tansmission_losses,tot_effiency,downtime,reg_capacity_loss_ratio,regional_transmission_surplus,regional_transmission_deficit] = MasterModel(power_matrix, region, ...
-         cable_power_cap, loc_power_cap_ch, loc_power_cap_dch, reg_power_cap_ch, reg_power_cap_dch, base_power_demand, ...
-         loc_storage_capacity, loc_storage_low, base_load_tol_constant, regional_efficiency, across_regions_efficiency, ...
+         storage_and_tansmission_losses,tot_effiency,downtime,reg_capacity_loss_ratio,regional_transmission_surplus, ... 
+         regional_transmission_deficit] = MasterModel(power_matrix, region, cable_power_cap, loc_power_cap_ch, ... 
+         loc_power_cap_dch, reg_power_cap_ch, reg_power_cap_dch, base_power_demand, loc_storage_capacity, ...
+         loc_storage_low, base_load_tol_constant, regional_efficiency, across_regions_efficiency, ...
          local_storage_efficiency, big_storage_efficiency,big_storage_cap)
+
 % This functions calculates local storage vectors and power out vectors for each wind park in the system as well 
-% as the shared regional storage vector and total curtailment of the system. The input is a power matrix where each
+% as the shared large central storage vector as well as some system performances. The input is a power matrix where each
 % column represent one park, a corresponding region array telling which region the parks belong to in order 
 % (eg ["1","2","2","3","3"]), a power cap for the transmission cable, the base power demand for each region as a
 % matrix, the local storage capacity, a lower limit for local storage as to prioritize charging, a tolerance factor 
 % for deviation from the power demand, and efficiencies for local and regional storage as well as transmission cables. 
+%
+% The model works in 4 steps described below:
 %
 % - Step 1: (Power beyond cable) it checks all parks if they have excess power beyond the tranmission line, if so it 
 %   store this in the local storage. 
@@ -17,33 +21,35 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
 %   there is no surplus, it drops the power out by the tolerance amount to store in local. Lastly regardless surplus, 
 %   tranmission occurs from the excess parks to the deficit park, ranking the ones with lowest local storage to be helped first.
 % - Step 3: (Inter-regions) Remaining surplus of a region gets send across regions. Transmission prioritizes the parks 
-%   with least local storage. Remaining surplus is then charged to the big regional storage.
+%   with least local storage. Remaining surplus is then charged to the big regional storage. If the large central storage 
+%   has a over capacity, the power gets stored in the local storages instead (assuming the overcapacity was known from start
+%   and the power did not get transmitted in the first place)
 % - Step 4: (Storage-discharge) If there is still deficit after the transmission described above the local storage discharges, 
-%   and if that is not enough the regional storage discharges. 
+%   and if that is not enough the large central storage discharges. 
 
     tic;
 
     % Get the size of the power matrix
     [n, T] = size(power_matrix);
 
-    % Preallocate
+    % Differentiate unique regions
+    regions = unique(region);
+
+    % Preallocate vectors and matricies
     loc_storage_matrix = zeros(n,T);
     power_out_matrix = zeros(n,T);
     big_storage_vec = zeros(1,T);
-    big_storage_vec(1) = big_storage_cap/2; %some start resorvior storage
+    big_storage_vec(1) = big_storage_cap/2; % add some start resorvior storage
     curtailment_loss = zeros(1,T);
     reg_power_loss = zeros(1,T);
     loc_power_loss = zeros(1,T);
     reg_capacity_loss = zeros(1,T);
-    downtime = 0;
-
-    mean_powers = mean(power_matrix,2);
-
-    % Differentiate unique regions
-    regions = unique(region);
-
     regional_transmission_surplus = zeros(size(regions,2),T);
     regional_transmission_deficit = zeros(size(regions,2),T);
+    downtime = 0;
+    
+    % Calculate mean power
+    mean_powers = mean(power_matrix,2);
 
     % Adjust the minpowerout to the same size as the parr power matrix
     min_power_out = ExpandDemandMatrix(base_power_demand,n,T,region);
@@ -116,9 +122,11 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
         % Step 3: Distribute remaining surplus across/between regions. If there is power remainging (tot_remainging_surplus)
         % then distribute this to other regions, If there is still more, move to another region. 
         
+        % Update the regional transmission vectors
         regional_transmission_surplus(:,t) = region_excess_power;
         regional_transmission_deficit(:,t) = region_deficit_power;
 
+        % Calculate remaining surplus
         tot_Remaining_Surplus = sum(region_excess_power);
 
         % If there are any power left within regional transmission, handle it between regions
@@ -144,9 +152,8 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
                     % Saves the over capacity
                     over_capacity = tot_Remaining_Surplus - reg_power_cap_ch;
                    
-                    % Stores in local if there still is some power
-                    % available from before (this occurs at the same tame as step 1)
-                    [loc_storage_matrix, over_capacity] = LocStorageCharge(loc_storage_matrix,loc_power_cap_ch,loc_storage_capacity,over_capacity,big_storage_efficiency,local_storage_efficiency,regional_efficiency,t);
+                    % Stores in local if there still is some power available from before (this occurs at the same tame as step 1)
+                    [loc_storage_matrix, over_capacity] = LocStorageCharge(loc_storage_matrix,loc_power_cap_ch,loc_storage_capacity,over_capacity,across_regions_efficiency,local_storage_efficiency,regional_efficiency,t);
     
                     % Apply cap 
                     [loc_storage_matrix(:,t),reg_power_loss(t)] = CapStorage(loc_storage_matrix(:,t), loc_storage_capacity);
@@ -166,7 +173,7 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
         end
     
         % Step 4: After possible transmission, this section takes from local
-        % storage if it is not empty otherwise from big.
+        % storage if it is not empty otherwise from large central storage.
     
         % Compute discharge for local storages  
         discharge = max(deficit_parks,-loc_power_cap_dch);
@@ -241,14 +248,15 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
         end
     end
 
-    % Compute the curtailment, power cap loss and total loss
+    % Compute different losses
     tot_loss = sum(curtailment_loss,"all");
     tot_power = sum(power_matrix,"all");
     tot_reg_power_loss = sum(reg_power_loss,"all");
     tot_loc_power_loss = sum(loc_power_loss,"all");
     tot_power_out = sum(power_out_matrix,"all");
     tot_reg_capacity_loss = sum(reg_capacity_loss);
-
+    
+    % Compute the losses in percentage, relative to total power
     tot_effiency = (sum(loc_storage_matrix(:,T)) + big_storage_vec(T) + tot_power_out - big_storage_vec(1))/tot_power*100;
     reg_power_loss_ratio = tot_reg_power_loss/tot_power*100;
     loc_power_loss_ratio = tot_loc_power_loss/tot_power*100;
@@ -256,7 +264,6 @@ function [power_out_matrix,loc_storage_matrix,big_storage_vec,curtailment,reg_po
     curtailment = tot_loss/tot_power*100;
     storage_and_tansmission_losses = 100 - tot_effiency - reg_power_loss_ratio - loc_power_loss_ratio - curtailment - reg_capacity_loss_ratio;
     toc;
-    
     
     %disp((sum(power_out_matrix,'all')+sum(loc_storage_matrix(:,T))+big_storage_vec(T)- big_storage_vec(1)+ tot_loss+tot_reg_power_loss)/tot_power)
 end

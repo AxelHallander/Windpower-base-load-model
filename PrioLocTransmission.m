@@ -1,9 +1,10 @@
 function [surplus_parks,deficit_parks,region_excess_power,region_deficit_power,loc_storage_matrix,indices_below_limit,loc_power_loss] = PrioLocTransmission(surplus_parks, ...
          deficit_parks,region,regions,regional_efficiency,local_storage_efficiency,loc_storage_low,loc_storage_matrix,base_load_tol_diff,loc_power_loss,loc_power_capacity,t)
     
-    % Step 2: (Intra-region) Distribute local exess to parks in the same regions with deficit, prioritzes parks with least storage. If the parks are within the power demand tolerance 
-    % and their storage is below the limit then the outout is lowered to store the difference in the local storage. Also, in the case of surplus, transmission occurs to the 
-    % parks with storages below the limit and stores energy there. Loops for each region.
+    % Step 2: (Intra-region) Distribute local exess to parks in the same regions with deficit, prioritzes parks
+    % with least storage. If the parks are within the power demand tolerance and their storage is below the limit 
+    % then the outout is lowered to store the difference in the local storage. Also, in the case of surplus, 
+    % transmission occurs to the parks with storages below the limit and stores energy there. Loops for each region.
     
     % Pre-allocate
     region_excess_power = zeros(1,length(regions));
@@ -12,7 +13,7 @@ function [surplus_parks,deficit_parks,region_excess_power,region_deficit_power,l
     % Preset indices_below_limit
     indices_below_limit = false;
 
-    %loop for each unique region
+    % Loop for each unique region
     for r = 1:length(regions)
         % Get indices of parks in the current region
         region_Indices = find(region == regions(r));
@@ -64,7 +65,7 @@ function [surplus_parks,deficit_parks,region_excess_power,region_deficit_power,l
                 allocation = min(abs(deficit_parks(region_Indices(idx))), tot_Regional_Surplus);
 
                 % Update the affected parks
-                %surplus_parks(region_Indices(idx)) = regional_Surplus(idx) - allocation; %kan vara konstig
+                %surplus_parks(region_Indices(idx)) = regional_Surplus(idx) - allocation; %This is not in use
                 deficit_parks(region_Indices(idx)) = regional_Deficit(idx) + allocation;
                 
                 % Update the overall balance

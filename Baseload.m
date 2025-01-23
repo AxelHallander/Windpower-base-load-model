@@ -1,6 +1,12 @@
 function BaseLoadMatrix = Baseload(years, Regions, CSV_file, amp)
-    
-    % Leap year shenanigans
+% This function calculates the minimum power for each country represented
+% in the data file to assume the countries baseload demand. Then it
+% fits a sinusodial function to said baseload for all countries in the same
+% defined region. Also an amplifier to the sinusodial amplitude is added
+% for demand flexibility which is used to match the seasonality of the
+% wind.
+
+    % Leap year adjustments
     nYears = years(2)-years(1)+1;
     LeapYear = zeros(1,nYears);
     for i = 1:nYears
@@ -18,14 +24,18 @@ function BaseLoadMatrix = Baseload(years, Regions, CSV_file, amp)
     % Read the data for the electric loads for all countries
     [countryCodes, countryMatrices, minLoadByCountry] = ReadLoadData(CSV_file);
     
+    % Loop over each region
     for region = keys(Regions)
+        
         % Initialize an array to store the summed load values for each date.
         Loads(region{1}) = timetable(minLoadByCountry{1}.Date, zeros(length(minLoadByCountry{1}.Date), 1), 'VariableNames', {'SummedMinLoad'});
         
+        % Find the countries in investigated region
         countries = Regions(region{1});
     
         % Loop over each country code in NorthRegion.
         for i = 1:length(Regions(region{1}))
+
             % Find the index of the current country code in the countryCodes array
             countryIndex = find(strcmp(countryCodes, countries(i)));
             
@@ -42,6 +52,7 @@ function BaseLoadMatrix = Baseload(years, Regions, CSV_file, amp)
             end
         end
         
+        % Initialize sinusoidal fit
         sinusoidalModel = @(params, t) params(1) .* sin(2 .* pi .* t/365 + params(2)) + params(3);
         
         % Convert dates to numeric values (days since January 1st)
@@ -54,7 +65,6 @@ function BaseLoadMatrix = Baseload(years, Regions, CSV_file, amp)
         A_guess = (max(loadValues) - min(loadValues)) / 2;
         phi_guess = 0;
         C_guess = mean(loadValues);
-        
         initialParams = [A_guess, phi_guess, C_guess];
         
         % Fit the sinusoidal model
@@ -63,7 +73,8 @@ function BaseLoadMatrix = Baseload(years, Regions, CSV_file, amp)
         
         % Change amplitude 
         fittedParams(1) = fittedParams(1) * amp;
-
+        
+        % Apply fit with leap year
         FittedValues(region{1}) = sinusoidalModel(fittedParams, numericDates);
         HourlyLoadsCurrent = repelem(FittedValues(region{1}), 24);
         EndValue = HourlyLoadsCurrent(end);
@@ -83,11 +94,13 @@ function BaseLoadMatrix = Baseload(years, Regions, CSV_file, amp)
     
     % Loop through each key and extract the corresponding array
     for i = keys(HourlyLoads)
-        array = HourlyLoads(i{1}); % Extract the array associated with the current key
+        % Extract the array associated with the current key
+        array = HourlyLoads(i{1}); 
         
         % Append the array as a column to the combined matrix
         BaseLoadMatrix = [BaseLoadMatrix, array];
     end
 
+    % Convert to GIGA
     BaseLoadMatrix = BaseLoadMatrix./10^3;
 

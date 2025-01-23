@@ -6,19 +6,19 @@ function [loc_storage_matrix,region_excess_power] = LocStorageExcessLowLim(loc_s
     % Get the indices of parks below the limit within the region
     indices_below_limit = region_Indices(parks_below_limit);
     
-    %Loop over the parks below the limit
+    % Loop over the parks below the limit
     for p = indices_below_limit
         if region_excess_power(r) > 0
-            %get the amount of storage in this park
+            % Get the amount of storage in this park
             current_storage = loc_storage_matrix(p, t);
 
-            %decide how much energy to store:
+            % Decide how much energy to store:
             stored_energy = min(region_excess_power(r), min(loc_storage_low-current_storage,loc_cap_power));
 
-            %Update storage
+            % Update storage
             loc_storage_matrix(p, t) = loc_storage_matrix(p, t) + local_storage_efficiency*stored_energy;
 
-            %update the excess power
+            % Update the excess power
             region_excess_power(r) = region_excess_power(r) - stored_energy;
         else
             break

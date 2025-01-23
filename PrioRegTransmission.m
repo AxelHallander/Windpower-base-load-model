@@ -4,7 +4,7 @@ function [surplus_parks,deficit_parks,tot_Regional_Surplus] = PrioRegTransmissio
 % Step 3: (Inter-regions) Distribute power across different regions.
 % Prioritizes parks with lowest storage.
     
-    %set the available power to total regional surplus
+    % Set the available power to total regional surplus
     tot_Regional_Surplus = available_power;
 
     % Loop over regions 
